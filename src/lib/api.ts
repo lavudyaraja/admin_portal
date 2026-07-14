@@ -1,6 +1,15 @@
-// Shared API client for the admin console. Talks to the same backend
-// the mobile app uses (default http://localhost:4000).
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+// Shared API client for the admin console. Talks to the same backend the mobile
+// app uses. NEXT_PUBLIC_API_URL always wins; without it we fall back to the local
+// dev server on localhost and to the deployed backend everywhere else, so a
+// Vercel deploy still works if the env var was never set.
+const PROD_API = "https://backend-printhub.onrender.com";
+const LOCAL_API = "http://localhost:4000";
+
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  (typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)
+    ? LOCAL_API
+    : PROD_API);
 const TOKEN_KEY = "printhub_admin_token";
 
 export const getToken = (): string =>
