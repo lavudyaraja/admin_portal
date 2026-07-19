@@ -1,82 +1,98 @@
 "use client";
 
 import Link from "next/link";
-import { LuZap, LuChevronRight } from "react-icons/lu";
+import Image from "next/image";
+import { LuDownload, LuArrowRight } from "react-icons/lu";
 
 interface HeroSectionProps {
-  isLoggedIn: boolean;
+  /**
+   * The signed-in console to send the reader to, or null when there is no
+   * session — then the same button asks them to register instead.
+   */
+  dashboardHref: string | null;
 }
 
-export default function HeroSection({ isLoggedIn }: HeroSectionProps) {
+/**
+ * The hero is the studio render, shown whole.
+ *
+ * The artwork already carries the headline, the standfirst and a Download
+ * button on its billboard, so nothing is overlaid on top of it — an overlay
+ * would sit on copy that is already there and read as duplicated.
+ *
+ * Two things are NOT in the image, and both are deliberate:
+ *
+ *  - The buttons underneath. The billboard's "Download Prinsta App" is pixels,
+ *    not a control; a hero with no clickable call to action is a dead end.
+ *  - The heading above it on small screens. The render is 1024px wide and its
+ *    baked-in headline lands around 5px tall on a phone — unreadable, and
+ *    invisible to search engines and screen readers. The `sm:hidden` block
+ *    restates it as real text on the sizes where the image can't carry it, and
+ *    disappears the moment the image is legible.
+ *
+ * `alt` carries the billboard's wording for the same reason.
+ *
+ * /hero_section.png is 1536x1024, which covers the ~1216px this section renders
+ * at on desktop, so it is no longer width-capped. It is still short of the
+ * 2432px a 2x display would want; if it looks soft on a retina screen the fix
+ * is a ~2560px export, not a code change.
+ */
+export default function HeroSection({ dashboardHref }: HeroSectionProps) {
   return (
-    <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-b from-rose-50/60 via-white to-slate-50">
-      {/* Glow Effects */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-rose-200/35 rounded-full blur-3xl -translate-y-1/2 pointer-events-none" />
-      <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-pink-200/25 rounded-full blur-3xl pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="text-center max-w-3xl mx-auto">
-          {/* Tagline */}
-          <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-rose-50 text-rose-700 border border-rose-100/80 mb-6 animate-fade-in">
-            <LuZap size={12} className="text-rose-600 animate-pulse" />
-            Smart Self-Service Printing Platform
-          </span>
-
-          {/* Title */}
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-slate-950 leading-none">
-            Transform Your Shop Into A{" "}
-            <span className="bg-gradient-to-r from-rose-600 via-pink-600 to-rose-700 bg-clip-text text-transparent">
-              Smart Kiosk
-            </span>
+    <section className="relative overflow-hidden bg-[#FDF6F7] pt-32 sm:pt-40 lg:pt-44 pb-16 sm:pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Small screens only — the render's own headline is too small to read here. */}
+        <div className="sm:hidden mb-6 text-center">
+          <h1 className="text-4xl font-black tracking-tight leading-[1.05]">
+            <span className="text-slate-950">Print what you need.</span>
+            <br />
+            <span className="text-rose-600">Where you need it.</span>
           </h1>
-
-          {/* Description */}
-          <p className="mt-6 text-base sm:text-lg text-slate-500 leading-relaxed">
-            Prinsta empowers college campus shops and printing centers to run self-service printing networks. Zero queues, instant digital payments, and automatic wireless printing via simple QR scans.
+          <p className="mt-3 text-slate-500 leading-relaxed">
+            Upload your documents, pay securely, and print at any nearby printer in just a few taps.
           </p>
+        </div>
 
-          {/* CTAs */}
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-            {isLoggedIn ? (
-              <Link
-                href="/dashboard"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white text-base font-bold px-8 py-3.5 rounded-2xl shadow-lg shadow-rose-600/20 hover:shadow-rose-600/30 active:scale-[0.98] transition-all cursor-pointer"
-              >
-                Go to Dashboard <LuChevronRight size={18} />
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/register"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-rose-600 hover:bg-rose-700 text-white text-base font-bold px-8 py-3.5 rounded-2xl shadow-lg shadow-rose-600/20 hover:shadow-rose-600/30 active:scale-[0.98] transition-all cursor-pointer"
-                >
-                  Register Printer Shop <LuChevronRight size={18} />
-                </Link>
-                <Link
-                  href="/login"
-                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-800 text-base font-bold px-8 py-3.5 rounded-2xl border border-slate-200 hover:border-slate-300 transition-all cursor-pointer"
-                >
-                  Login as Admin
-                  </Link>
-              </>
-            )}
-          </div>
+        {/*
+          The frame is the animated gradient itself.
 
-          {/* Micro stats banner */}
-          <div className="mt-12 pt-12 border-t border-slate-100 grid grid-cols-3 gap-4 max-w-xl mx-auto text-center">
-            <div>
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">₹2.00</p>
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">B&W Printing</p>
-            </div>
-            <div className="border-x border-slate-100">
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">100%</p>
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">Self Service</p>
-            </div>
-            <div>
-              <p className="text-2xl sm:text-3xl font-black text-slate-900">&lt; 30s</p>
-              <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">Print Time</p>
-            </div>
+          `.gradient-frame` (globals.css) paints a flowing multi-hue gradient as
+          this element's background; the padding is what shows through as the
+          ring, so the band thickness is the padding value and nothing else.
+
+          The inner radius is deliberately smaller than the outer by roughly the
+          ring width — concentric corners look wrong when both radii match.
+        */}
+        <div className="gradient-frame relative mx-auto rounded-[1.4rem] sm:rounded-[1.9rem] p-1.5 sm:p-2 shadow-2xl shadow-rose-900/15">
+          <div className="overflow-hidden rounded-[1.05rem] sm:rounded-[1.5rem] bg-white">
+            <Image
+              src="/hero_section.png"
+              alt="Print what you need. Where you need it. Upload your documents, pay securely, and print at any nearby printer in just a few taps."
+              width={1536}
+              height={1024}
+              priority
+              sizes="(max-width: 1280px) 100vw, 1216px"
+              className="w-full h-auto"
+            />
           </div>
+        </div>
+
+        {/* The billboard's button is part of the artwork; these are the real ones. */}
+        <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <Link
+            href="/#download"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl bg-rose-500 hover:bg-rose-600 px-7 py-3.5 text-sm font-bold text-white transition-colors active:scale-[0.98]"
+          >
+            <LuDownload size={16} />
+            Download Prinsta App
+          </Link>
+
+          <Link
+            href={dashboardHref ?? "/vendor/register?role=vendor"}
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-xl border border-rose-200 bg-white hover:bg-rose-50 px-7 py-3.5 text-sm font-bold text-rose-700 transition-colors"
+          >
+            {dashboardHref ? "Go to your console" : "Register your printer"}
+            <LuArrowRight size={16} />
+          </Link>
         </div>
       </div>
     </section>

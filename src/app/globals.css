@@ -4,11 +4,265 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Operator-console palette — a set of very light pastel tints.
+ *
+ * They carry almost no contrast on their own, so they are used strictly as
+ * SURFACE fills (stat tiles, chips, table row accents) and never as text or
+ * icon colours. Every foreground on top of them is a slate tone, which keeps
+ * text at or above WCAG AA on all twelve.
+ *
+ * `--color-ink-*` is the matching saturated tone for the small icon square that
+ * sits on each tinted surface — same hue, dark enough to read as an accent.
+ * `src/lib/admin/theme.ts` mirrors this list as data, because Tailwind can't
+ * build class names at runtime.
+ */
+@theme {
+  --color-tint-gray: #f5f7fa;
+  --color-tint-sky: #eaf6ff;
+  --color-tint-mint: #f0fff4;
+  --color-tint-gold: #fff7e8;
+  --color-tint-blush: #fff0f5;
+  --color-tint-lavender: #f5f0ff;
+  --color-tint-aqua: #effffa;
+  --color-tint-peach: #fff4f0;
+  --color-tint-lime: #f3fff0;
+  --color-tint-ice: #eef7ff;
+  --color-tint-cream: #fffbea;
+  --color-tint-violet: #f8f4ff;
+
+  /* Saturated partners — icon squares and chart marks only, never large fills. */
+  --color-ink-gray: #64748b;
+  --color-ink-sky: #0284c7;
+  --color-ink-mint: #059669;
+  --color-ink-gold: #b45309;
+  --color-ink-blush: #be123c;
+  --color-ink-lavender: #7c3aed;
+  --color-ink-aqua: #0d9488;
+  --color-ink-peach: #ea580c;
+  --color-ink-lime: #4d7c0f;
+  --color-ink-ice: #0369a1;
+  --color-ink-cream: #a16207;
+  --color-ink-violet: #6d28d9;
+}
+
+/*
+ * Flowing gradient border.
+ *
+ * The element paints the gradient as its own background and the content sits on
+ * an opaque child inset by the padding, so the visible ring IS the padding —
+ * `border-image` can't be animated or rounded reliably, and a pseudo-element
+ * would need its own stacking context.
+ *
+ * The motion animates `background-position` across an oversized gradient rather
+ * than rotating a conic one through a custom property. Both look similar, but
+ * background-position interpolates natively; an unregistered custom property in
+ * a keyframe does not (the starfield above hit exactly that and sat still).
+ * The first and last colour stops match so the loop has no visible seam.
+ */
+@keyframes border-flow {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 200% 50%;
+  }
+}
+
+.gradient-frame {
+  /* Ink → emerald → rose, with mid stops so neighbouring hues blend rather
+     than banding. Opens and closes on the same ink so the loop is seamless. */
+  background-image: linear-gradient(
+    90deg,
+    #0f172a,
+    #065f46,
+    #10b981,
+    #34d399,
+    #fb7185,
+    #f43f5e,
+    #881337,
+    #0f172a
+  );
+  background-size: 200% 100%;
+  animation: border-flow 9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gradient-frame {
+    animation: none;
+  }
+}
+
+/*
+ * Scroll reveal.
+ *
+ * A parent gets `.reveal-group` and picks up `.is-visible` from an
+ * IntersectionObserver when it scrolls into view; children carry `.reveal` and
+ * a `--i` index that staggers them. The initial hidden state is only applied
+ * inside a `.reveal-group`, so a child whose observer never fires (JS disabled,
+ * observer unsupported) still renders — it just doesn't animate.
+ */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(26px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.reveal-group .reveal {
+  opacity: 0;
+}
+
+.reveal-group.is-visible .reveal {
+  animation: reveal-up 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: calc(var(--i, 0) * 110ms);
+}
+
+/* The timeline rail behind the step badges, drawn left to right. */
+@keyframes rail-draw {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.reveal-group .rail {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.reveal-group.is-visible .rail {
+  animation: rail-draw 1.1s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* Decorative motion — anyone who asked the OS to reduce motion gets the end
+   state immediately rather than nothing at all. */
+@media (prefers-reduced-motion: reduce) {
+  .reveal-group .reveal,
+  .reveal-group.is-visible .reveal {
+    animation: none;
+    opacity: 1;
+  }
+  .reveal-group .rail,
+  .reveal-group.is-visible .rail {
+    animation: none;
+    transform: scaleX(1);
+  }
+}
+
+/*
+ * Starfield — the drifting specks behind the dark footer.
+ *
+ * Each star runs two animations at once: a `drift-*` that moves it and a
+ * `twinkle-*` that fades it. Durations and delays are set per-star inline, so
+ * the two never loop in lockstep and the field doesn't read as a pattern.
+ *
+ * The offsets are written out literally instead of coming from CSS variables.
+ * An earlier version used `translate(var(--dx), var(--dy))` inside the
+ * keyframes and the stars sat dead still: an unregistered custom property is a
+ * plain token substitution, so the browser can't interpolate between two
+ * keyframes that both resolve through one. Six drift variants and three twinkle
+ * variants are plenty of variety once the durations differ per star.
+ */
+@keyframes drift-a {
+  0%, 100% { transform: translate(0, 0); }
+  25%  { transform: translate(14px, -10px); }
+  50%  { transform: translate(-8px, 12px); }
+  75%  { transform: translate(-16px, 5px); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate(0, 0); }
+  25%  { transform: translate(-12px, 14px); }
+  50%  { transform: translate(18px, 6px); }
+  75%  { transform: translate(7px, -13px); }
+}
+@keyframes drift-c {
+  0%, 100% { transform: translate(0, 0); }
+  33%  { transform: translate(20px, 9px); }
+  66%  { transform: translate(-11px, -15px); }
+}
+@keyframes drift-d {
+  0%, 100% { transform: translate(0, 0); }
+  25%  { transform: translate(-18px, -7px); }
+  50%  { transform: translate(-5px, 16px); }
+  75%  { transform: translate(13px, 10px); }
+}
+@keyframes drift-e {
+  0%, 100% { transform: translate(0, 0); }
+  33%  { transform: translate(9px, -18px); }
+  66%  { transform: translate(-15px, 4px); }
+}
+@keyframes drift-f {
+  0%, 100% { transform: translate(0, 0); }
+  25%  { transform: translate(6px, 15px); }
+  50%  { transform: translate(-20px, -6px); }
+  75%  { transform: translate(11px, -12px); }
+}
+
+@keyframes twinkle-a {
+  0%, 100% { opacity: 0.2; }
+  50%      { opacity: 0.9; }
+}
+@keyframes twinkle-b {
+  0%, 100% { opacity: 0.45; }
+  50%      { opacity: 1; }
+}
+@keyframes twinkle-c {
+  0%, 100% { opacity: 0.15; }
+  50%      { opacity: 0.6; }
+}
+
+.star {
+  animation-name: var(--drift), var(--twinkle);
+  animation-duration: var(--drift-duration), var(--twinkle-duration);
+  animation-delay: var(--delay), var(--delay);
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* A drifting starfield is decorative motion — hold it still for anyone who has
+   asked the OS to reduce motion, but keep the stars visible. */
+@media (prefers-reduced-motion: reduce) {
+  .star {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* Thin, unobtrusive scrollbars inside the admin console — it is dense, and
+   the default Windows bars eat noticeable horizontal room in scrolling tables.
+   Scoped to the console so the marketing pages keep the native bars. */
+.admin-scope,
+.admin-scope * {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+.admin-scope *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+.admin-scope *::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+.admin-scope *::-webkit-scrollbar-track {
+  background: transparent;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Supplied by next/font in app/layout.tsx. The fallbacks matter: they are what
+     renders during the swap, and picking metric-similar system faces keeps the
+     headings from reflowing once Inter arrives. */
+  --font-sans: var(--font-sans-family), ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-mono-family), ui-monospace, "Cascadia Mono", Menlo, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -127,4 +381,15 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
 }
