@@ -6,8 +6,6 @@ import {
   LuPrinter,
   LuFileText,
   LuQrCode,
-  LuWifi,
-  LuUsers,
   LuCoins,
   LuHistory,
   LuBanknote,
@@ -31,13 +29,14 @@ const NAV: NavGroup[] = [
       { label: "Printers", href: "/vendor/printers", icon: LuPrinter },
       { label: "Orders", href: "/vendor/orders", icon: LuFileText },
       { label: "QR Codes", href: "/vendor/qr", icon: LuQrCode },
-      { label: "Wi-Fi QR", href: "/vendor/wifi-qr", icon: LuWifi },
     ],
   },
   {
-    label: "Users & Payments",
+    // The platform user directory is admin-only (it reads ADMIN-guarded routes),
+    // so it lives in the admin portal. A shop owner's equivalent question —
+    // how many people print on my machines — is answered on Printers instead.
+    label: "Payments",
     items: [
-      { label: "Users", href: "/vendor/users", icon: LuUsers },
       { label: "Points", href: "/vendor/points", icon: LuCoins },
       { label: "Transactions", href: "/vendor/transactions", icon: LuHistory },
       { label: "Bank Account", href: "/vendor/bank-account", icon: LuBanknote },
@@ -75,6 +74,7 @@ export default function Sidebar({
       fallbackName="Vendor"
       roleLabel={user?.role === "ADMIN" ? "Platform ADMIN" : "Shop owner"}
       onOpenSettings={() => onOpenSettings()}
+      helpHref="/vendor/support"
       collapsed={collapsed}
       setCollapsed={setCollapsed}
       mobileOpen={mobileOpen}

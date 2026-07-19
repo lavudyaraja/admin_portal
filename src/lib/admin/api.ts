@@ -95,6 +95,41 @@ export interface Metrics {
   offlinePrinters: number;
   lowPaperCount: number;
   pointsTopupPaise: number;
+  /** Total points ever credited by top-ups. */
+  pointsToppedUp: number;
+  /** Head count by role. `totalUsers` is students only, for historical reasons. */
+  studentCount: number;
+  vendorCount: number;
+  adminCount: number;
+  allUsersCount: number;
+  vendorProfiles: number;
+  bankAccounts: number;
+  verifiedBankAccounts: number;
+}
+
+export interface BankAccountRow {
+  id: string;
+  accountHolder: string;
+  accountLast4: string;
+  accountMasked: string;
+  ifsc: string;
+  bankName: string | null;
+  branch: string | null;
+  upiId: string | null;
+  verified: boolean;
+  createdAt: string;
+  updatedAt: string;
+  ownerName: string;
+  ownerContact: string;
+  ownerRole: string;
+  shopName: string | null;
+}
+
+export interface BankAccountsResponse {
+  total: number;
+  verified: number;
+  unverified: number;
+  accounts: BankAccountRow[];
 }
 
 // The chart owns this shape, since it is shared by both consoles.
@@ -132,7 +167,8 @@ export interface UserRow {
   phone: string | null;
   email: string | null;
   role: "STUDENT" | "OPERATOR" | "ADMIN";
-  pointsBalancePaise: number;
+  /** Prinsta Points, not paise. The legacy paise column is no longer written to. */
+  pointsBalance: number;
   createdAt: string;
   _count: { orders: number };
 }
@@ -158,6 +194,20 @@ export interface KioskRow {
   lastSeenAt: string | null;
   ownerName: string;
   mobileNumber: string;
+  /** When the vendor registered this machine. */
+  createdAt: string;
+  brand: string;
+  model: string;
+  serialNumber: string | null;
+  ipAddress: string;
+  colorPrinting: boolean;
+  duplexPrinting: boolean;
+  supportedPaperSizes: string[];
+  costPerBWPagePaise: number;
+  costPerColorPagePaise: number;
+  /** Usage from the mobile app: total orders, and distinct people who printed. */
+  orders: number;
+  customers: number;
   /** Null for a printer that predates vendors and hasn't been assigned yet. */
   vendorId: string | null;
   locationId: string | null;
@@ -172,4 +222,214 @@ export interface SupportRow {
   status: string;
   reply: string | null;
   createdAt: string;
+}
+
+// ── User profile bundle (GET /admin/users/:id) ───────────────────────────────
+
+export interface UserRefund {
+  id: string;
+  amountPaise: number;
+  pointsCredited: number;
+  reason: string;
+  origin: string;
+  note: string | null;
+  createdAt: string;
+  order: { orderCode: string } | null;
+}
+
+export interface UserComplaint {
+  id: string;
+  code: string;
+  category: string;
+  subject: string;
+  status: string;
+  resolution: string | null;
+  createdAt: string;
+  resolvedAt: string | null;
+}
+
+export interface UserTicket {
+  id: string;
+  subject: string;
+  status: string;
+  reply: string | null;
+  createdAt: string;
+}
+
+export interface UserPrinter {
+  id: string;
+  name: string;
+  uniquePrinterId: string;
+  shopName: string;
+  locationName: string;
+  orders: number;
+  lastUsedAt: string;
+}
+
+export interface UserTxn {
+  id: string;
+  type: "CREDIT" | "DEBIT";
+  amountPoints: number;
+  balancePoints: number;
+  amountPaise: number;
+  balancePaise: number;
+  description: string;
+  orderId: string | null;
+  createdAt: string;
+}
+
+export interface UserOrder {
+  id: string;
+  orderCode: string;
+  status: string;
+  costPaise: number;
+  pagesToPrint: number;
+  copies: number;
+  colorMode: string;
+  paymentMethod: string | null;
+  createdAt: string;
+  document: { fileName: string; fileType: string } | null;
+  printer: { id: string; name: string; uniquePrinterId: string; shopName: string; locationName: string } | null;
+}
+
+/** Derived timeline, not an audit log — see the route's comment. */
+export interface ActivityEvent {
+  at: string;
+  kind: "ORDER" | "CREDIT" | "DEBIT" | "REPORT" | "REFUND" | "JOINED";
+  title: string;
+  detail: string;
+}
+
+export interface UserProfile {
+  user: {
+    id: string;
+    name: string;
+    phone: string | null;
+    email: string | null;
+    rollNumber: string | null;
+    role: string;
+    pointsBalance: number;
+    emailNotifications: boolean;
+    createdAt: string;
+    updatedAt: string;
+    referralCode: string | null;
+    referredById: string | null;
+    referralRewardedAt: string | null;
+    bannedAt: string | null;
+    banReason: string | null;
+    referredBy: { id: string; name: string; referralCode: string | null } | null;
+    referrals: { id: string; name: string; createdAt: string; referralRewardedAt: string | null }[];
+    _count: { orders: number; complaints: number; refunds: number; documents: number };
+  };
+  summary: {
+    totalOrders: number;
+    completedSpendPaise: number;
+    pagesPrinted: number;
+    pointsBalance: number;
+    refunds: number;
+    complaints: number;
+    invited: number;
+    invitedConverted: number;
+    printersUsed: number;
+  };
+  orders: UserOrder[];
+  transactions: UserTxn[];
+  refunds: UserRefund[];
+  complaints: UserComplaint[];
+  tickets: UserTicket[];
+  savedPrinters: UserPrinter[];
+  activity: ActivityEvent[];
+}
+
+// ── Vendor profile bundle (GET /admin/vendors/:id) ───────────────────────────
+
+export interface VendorPrinter {
+  id: string;
+  name: string;
+  uniquePrinterId: string;
+  brand: string;
+  model: string;
+  status: string;
+  paperLevel: number;
+  tonerLevel: number;
+  locationName: string;
+  costPerBWPagePaise: number;
+  costPerColorPagePaise: number;
+  createdAt: string;
+  lastSeenAt: string | null;
+}
+
+export interface VendorOrder {
+  id: string;
+  orderCode: string;
+  status: string;
+  costPaise: number;
+  pagesToPrint: number;
+  colorMode: string;
+  createdAt: string;
+  user: { id: string; name: string } | null;
+  printer: { name: string; uniquePrinterId: string } | null;
+}
+
+export interface VendorProfile {
+  vendor: {
+    id: string;
+    shopName: string;
+    contactName: string | null;
+    mobileNumber: string | null;
+    bannedAt: string | null;
+    banReason: string | null;
+    createdAt: string;
+    updatedAt: string;
+    user: {
+      id: string;
+      name: string;
+      email: string | null;
+      phone: string | null;
+      role: string;
+      createdAt: string;
+      bankAccount: {
+        accountHolder: string;
+        accountNumber: string;
+        ifsc: string;
+        bankName: string | null;
+        branch: string | null;
+        upiId: string | null;
+        verified: boolean;
+        updatedAt: string;
+      } | null;
+    } | null;
+    locations: {
+      id: string;
+      name: string;
+      address: string | null;
+      createdAt: string;
+      _count: { printers: number };
+    }[];
+    printers: VendorPrinter[];
+  };
+  summary: {
+    totalOrders: number;
+    completedOrders: number;
+    failedOrders: number;
+    cancelledOrders: number;
+    revenuePaise: number;
+    pagesPrinted: number;
+    customers: number;
+    printers: number;
+    locations: number;
+  };
+  orders: VendorOrder[];
+  activity: { at: string; kind: "ORDER" | "PRINTER" | "JOINED"; title: string; detail: string }[];
+}
+
+export interface VendorListRow {
+  id: string;
+  shopName: string;
+  contactName: string | null;
+  mobileNumber: string | null;
+  createdAt: string;
+  user: { id: string; name: string; email: string | null; phone: string | null } | null;
+  locations: { id: string; name: string }[];
+  _count: { printers: number; orders: number };
 }

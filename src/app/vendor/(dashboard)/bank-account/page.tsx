@@ -39,7 +39,7 @@ export default function BankAccountPage() {
   const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   useEffect(() => {
-    apiFetch<{ account: BankAccount | null }>("/admin/bank-account")
+    apiFetch<{ account: BankAccount | null }>("/bank-account")
       .then((r) => {
         setAccount(r.account);
         if (!r.account) setEditing(true);
@@ -59,7 +59,7 @@ export default function BankAccountPage() {
 
     setSaving(true);
     try {
-      const res = await apiFetch<{ account: BankAccount }>("/admin/bank-account", {
+      const res = await apiFetch<{ account: BankAccount }>("/bank-account", {
         method: "PUT",
         body: {
           accountHolder: form.accountHolder,
@@ -85,7 +85,7 @@ export default function BankAccountPage() {
     if (!confirm("Remove this bank account? Payouts will stop until you add another.")) return;
     setRemoving(true);
     try {
-      await apiFetch("/admin/bank-account", { method: "DELETE" });
+      await apiFetch("/bank-account", { method: "DELETE" });
       setAccount(null);
       setForm(EMPTY_FORM);
       setEditing(true);

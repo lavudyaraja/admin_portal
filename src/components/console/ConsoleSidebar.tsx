@@ -10,6 +10,7 @@ import {
   LuPanelLeftClose,
   LuX,
   LuSettings,
+  LuLifeBuoy,
 } from "react-icons/lu";
 import { cx } from "./primitives";
 
@@ -17,6 +18,11 @@ export interface NavItem {
   label: string;
   href: string;
   icon: IconType;
+  /**
+   * Planned but not built. Renders as a dimmed, non-navigating row so the shape
+   * of the console is visible without every unfinished section 404-ing.
+   */
+  soon?: boolean;
 }
 
 export interface NavGroup {
@@ -43,6 +49,8 @@ export interface ConsoleSidebarProps {
   roleLabel: string;
   /** Vendor only: opens the settings modal. Omitted by the admin console. */
   onOpenSettings?: () => void;
+  /** Where "Help & support" goes. Omit to hide the entry. */
+  helpHref?: string;
   collapsed: boolean;
   setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
   mobileOpen: boolean;
@@ -58,8 +66,11 @@ export interface ConsoleSidebarProps {
  * line, whether there's a settings entry — is a prop; the chrome is not.
  *
  * Two layout rules are load-bearing and easy to break:
- *  - Collapsed on desktop, the nav must keep `overflow: visible` or the hover
- *    tooltips (positioned at `left-full`) get clipped by the scroll container.
+ *  - The nav scrolls in both states. It is tempting to give it
+ *    `overflow: visible` when collapsed so a `left-full` tooltip isn't clipped —
+ *    that is what it used to do, and it silently made the lower nav groups
+ *    unreachable once the list grew past one screen. Collapsed items use the
+ *    native `title` for their label instead.
  *  - On mobile the drawer is always full width; only desktop honours `collapsed`.
  */
 export default function ConsoleSidebar({
@@ -69,6 +80,7 @@ export default function ConsoleSidebar({
   fallbackName,
   roleLabel,
   onOpenSettings,
+  helpHref,
   collapsed,
   setCollapsed,
   mobileOpen,
@@ -178,12 +190,14 @@ export default function ConsoleSidebar({
         </div>
 
         {/* Nav */}
-        <nav
-          className={cx(
-            "flex-1 py-3 space-y-5 px-2.5 overflow-y-auto overflow-x-hidden no-scrollbar",
-            collapsed && "lg:overflow-visible"
-          )}
-        >
+        {/* Scrolls in both states.
+            This used to switch to `overflow-visible` when collapsed so the
+            hover tooltips (positioned at `left-full`) weren't clipped — but
+            `visible` also stops the nav scrolling, and once the nav grew past a
+            screen the lower groups became unreachable in collapsed mode. The
+            tooltip is the thing that gives way: collapsed items already carry a
+            native `title`, so the label is still available on hover. */}
+        <nav className="flex-1 py-3 space-y-5 px-2.5 overflow-y-auto overflow-x-hidden no-scrollbar">
           {navGroups.map((group) => (
             <div key={group.label} className="space-y-1">
               <p
@@ -197,6 +211,35 @@ export default function ConsoleSidebar({
               {group.items.map((item) => {
                 const active = pathname === item.href || pathname.startsWith(item.href + "/");
                 const Icon = item.icon;
+
+                // Unbuilt sections render as a plain row, not a link — the
+                // structure is visible without the click going nowhere.
+                if (item.soon) {
+                  return (
+                    <div
+                      key={item.href}
+                      title={collapsed ? `${item.label} — coming soon` : undefined}
+                      className={cx(
+                        "flex items-center gap-3 rounded-lg text-sm font-medium relative group px-3 py-2.5 cursor-default text-slate-400",
+                        collapsed && "lg:justify-center lg:px-0 lg:h-11 lg:py-0"
+                      )}
+                    >
+                      <span className="shrink-0 text-slate-300">
+                        <Icon size={19} />
+                      </span>
+                      <span className={cx("truncate flex-1", collapsed && "lg:hidden")}>{item.label}</span>
+                      <span
+                        className={cx(
+                          "text-[9px] font-bold uppercase tracking-wide text-slate-400 bg-slate-200/70 px-1.5 py-0.5 rounded shrink-0",
+                          collapsed && "lg:hidden"
+                        )}
+                      >
+                        Soon
+                      </span>
+                    </div>
+                  );
+                }
+
                 return (
                   <Link
                     key={item.href}
@@ -221,11 +264,6 @@ export default function ConsoleSidebar({
                     </span>
                     <span className={cx("truncate", collapsed && "lg:hidden")}>{item.label}</span>
 
-                    {collapsed && (
-                      <span className="hidden lg:group-hover:flex items-center absolute left-full ml-3 px-2.5 py-1.5 bg-slate-900 text-white text-xs font-semibold rounded-lg whitespace-nowrap pointer-events-none shadow-lg z-[60] before:content-[''] before:absolute before:-left-1 before:top-1/2 before:-translate-y-1/2 before:w-2 before:h-2 before:rotate-45 before:bg-slate-900">
-                        {item.label}
-                      </span>
-                    )}
                   </Link>
                 );
               })}
@@ -282,6 +320,19 @@ export default function ConsoleSidebar({
                 >
                   <LuSettings size={13} /> Settings
                 </button>
+              )}
+
+              {/* Help sits with Settings rather than only in the nav, so it is
+                  reachable from any page — someone who is stuck is not going to
+                  go hunting for it. Points at the same operator inbox. */}
+              {helpHref && (
+                <Link
+                  href={helpHref}
+                  onClick={() => setProfileOpen(false)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-100 transition-colors w-full text-left cursor-pointer rounded-lg"
+                >
+                  <LuLifeBuoy size={13} /> Help &amp; support
+                </Link>
               )}
 
               <button

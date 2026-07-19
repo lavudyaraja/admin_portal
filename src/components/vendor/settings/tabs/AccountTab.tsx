@@ -51,7 +51,7 @@ export default function AccountTab() {
     if (newPw.length < 6) { setPwMsg({ ok: false, text: "New password must be at least 6 characters." }); return; }
     setSavingPw(true);
     try {
-      await apiFetch("/admin/change-password", { method: "POST", body: { currentPassword: curPw, newPassword: newPw } });
+      await apiFetch("/auth/change-password", { method: "POST", body: { currentPassword: curPw, newPassword: newPw } });
       setPwMsg({ ok: true, text: "Password changed successfully." });
       setCurPw(""); setNewPw(""); setConfirmPw("");
     } catch (e: unknown) {

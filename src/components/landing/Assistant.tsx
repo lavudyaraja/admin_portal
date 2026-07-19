@@ -168,7 +168,16 @@ export default function Assistant() {
         <div
           role="dialog"
           aria-label="Prinsta assistant"
-          className="fixed bottom-24 right-4 z-50 flex h-[min(560px,calc(100vh-8rem))] w-[calc(100vw-2rem)] max-w-[380px] flex-col overflow-hidden rounded-3xl border border-rose-100 bg-white shadow-2xl shadow-rose-900/10 sm:right-6"
+          /* Height is what kept this from fitting a phone. At `100vh - 8rem`
+             sitting `bottom-24`, the top edge resolved to ~2rem — underneath the
+             floating navbar, which is what the panel was covering.
+             On a phone it stays deliberately short: 430px, and never taller than
+             the screen less 15rem, which keeps the nav well clear above and the
+             launcher clear below. `dvh` rather than `vh` so a mobile browser's
+             collapsing address bar can't make it taller than the screen it is
+             measured against. From sm up it returns to the roomier
+             right-anchored floating card. */
+          className="fixed inset-x-3 bottom-24 z-50 flex h-[min(430px,calc(100dvh-15rem))] flex-col overflow-hidden rounded-3xl border border-rose-100 bg-white shadow-2xl shadow-rose-900/10 sm:inset-x-auto sm:right-6 sm:h-[min(560px,calc(100dvh-12rem))] sm:w-[380px]"
         >
           {/* Header. Light, on the same blush the rest of the site uses for its
               soft surfaces — the panel used to open on a near-black bar, which
@@ -200,7 +209,9 @@ export default function Assistant() {
           {/* Thread */}
           <div
             ref={threadRef}
-            className="flex-1 space-y-3 overflow-y-auto bg-white px-4 py-4"
+            /* `overscroll-contain` keeps a flick at the end of the thread from
+               scrolling the landing page behind the panel. */
+            className="flex-1 space-y-3 overflow-y-auto overscroll-contain bg-white px-4 py-4"
             aria-live="polite"
           >
             {messages.map((m) =>
@@ -278,7 +289,10 @@ export default function Assistant() {
               onChange={(e) => setDraft(e.target.value)}
               placeholder="Ask about Prinsta…"
               aria-label="Ask the Prinsta assistant"
-              className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[13px] text-slate-800 placeholder:text-slate-400 focus:border-rose-400 focus:bg-white focus:outline-none"
+              /* 16px on phones on purpose: iOS Safari zooms the page in on any
+                 focused input smaller than that, which shoves the panel and the
+                 rest of the page out of position. Back to 13px from sm up. */
+              className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-[16px] text-slate-800 placeholder:text-slate-400 focus:border-rose-400 focus:bg-white focus:outline-none sm:text-[13px]"
             />
             <button
               type="submit"

@@ -3,12 +3,16 @@
 import { useEffect, useState, useCallback } from "react";
 import { LuSearch, LuArrowLeftRight, LuArrowDownLeft, LuArrowUpRight } from "react-icons/lu";
 import { apiFetch } from "@/lib/vendor/api";
-import { inr, dateTime } from "@/lib/console/format";
+import { points, count, ledgerPoints, dateTime } from "@/lib/console/format";
+import { StatTile } from "@/components/console/primitives";
 import { Select } from "@/components/vendor/settings/fields";
 
 interface Txn {
   id: string;
   type: "CREDIT" | "DEBIT";
+  amountPoints: number;
+  balancePoints: number;
+  /** Legacy columns, still populated on pre-rename rows. */
   amountPaise: number;
   balancePaise: number;
   description: string;
@@ -29,18 +33,6 @@ function TypePill({ type }: { type: "CREDIT" | "DEBIT" }) {
   );
 }
 
-function StatCard({ label, value, icon: Icon }: { label: string; value: string; icon: React.ComponentType<{ size?: number; className?: string }> }) {
-  return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200">
-      <div className="flex items-center justify-between">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">{label}</p>
-        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center"><Icon size={16} className="text-slate-600" /></div>
-      </div>
-      <p className="text-xl font-black text-slate-900 mt-3">{value}</p>
-    </div>
-  );
-}
-
 export default function TransactionsPage() {
   const [txns, setTxns] = useState<Txn[]>([]);
   const [total, setTotal] = useState(0);
@@ -55,7 +47,7 @@ export default function TransactionsPage() {
       const params = new URLSearchParams({ limit: String(PAGE), offset: String(offset) });
       if (search) params.set("search", search);
       if (type) params.set("type", type);
-      const res = await apiFetch<{ transactions: Txn[]; total: number }>(`/admin/transactions?${params}`);
+      const res = await apiFetch<{ transactions: Txn[]; total: number }>(`/vendors/me/transactions?${params}`);
       setTxns((prev) => (append ? [...prev, ...res.transactions] : res.transactions));
       setTotal(res.total);
     } catch {}
@@ -67,8 +59,9 @@ export default function TransactionsPage() {
     return () => clearTimeout(t);
   }, [load]);
 
-  const credits = txns.filter((t) => t.type === "CREDIT").reduce((s, t) => s + t.amountPaise, 0);
-  const debits = txns.filter((t) => t.type === "DEBIT").reduce((s, t) => s + t.amountPaise, 0);
+  // Summed through ledgerPoints so pre- and post-rename rows both count.
+  const credits = txns.filter((t) => t.type === "CREDIT").reduce((s, t) => s + ledgerPoints(t), 0);
+  const debits = txns.filter((t) => t.type === "DEBIT").reduce((s, t) => s + ledgerPoints(t), 0);
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
@@ -79,11 +72,11 @@ export default function TransactionsPage() {
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Transactions" value={total.toLocaleString()} icon={LuArrowLeftRight} />
-        <StatCard label="Credits (loaded)" value={inr(credits)} icon={LuArrowDownLeft} />
-        <StatCard label="Debits (loaded)" value={inr(debits)} icon={LuArrowUpRight} />
-        <StatCard label="Net (loaded)" value={inr(credits - debits)} icon={LuArrowLeftRight} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatTile label="Transactions" value={count(total)} icon={LuArrowLeftRight} tint="lavender" />
+        <StatTile label="Credits" value={points(credits)} icon={LuArrowDownLeft} tint="mint" hint="loaded rows" />
+        <StatTile label="Debits" value={points(debits)} icon={LuArrowUpRight} tint="blush" hint="loaded rows" />
+        <StatTile label="Net" value={points(credits - debits)} icon={LuArrowLeftRight} tint="sky" hint="loaded rows" />
       </div>
 
       {/* Filters */}
@@ -135,7 +128,7 @@ export default function TransactionsPage() {
                 <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100">
                   <span className="text-[11px] text-slate-400">{dateTime(t.createdAt)}</span>
                   <span className={`font-bold ${t.type === "CREDIT" ? "text-emerald-600" : "text-rose-600"}`}>
-                    {t.type === "CREDIT" ? "+" : "−"}{inr(t.amountPaise)}
+                    {t.type === "CREDIT" ? "+" : "−"}{points(ledgerPoints(t))}
                   </span>
                 </div>
               </div>
@@ -163,9 +156,9 @@ export default function TransactionsPage() {
                       <td className="px-5 py-4"><TypePill type={t.type} /></td>
                       <td className="px-5 py-4 text-slate-600 max-w-64 truncate">{t.description}</td>
                       <td className={`px-5 py-4 font-bold ${t.type === "CREDIT" ? "text-emerald-600" : "text-rose-600"}`}>
-                        {t.type === "CREDIT" ? "+" : "−"}{inr(t.amountPaise)}
+                        {t.type === "CREDIT" ? "+" : "−"}{points(ledgerPoints(t))}
                       </td>
-                      <td className="px-5 py-4 text-slate-700">{inr(t.balancePaise)}</td>
+                      <td className="px-5 py-4 text-slate-700">{points(ledgerPoints(t.balancePoints, t.balancePaise))}</td>
                       <td className="px-5 py-4 text-xs text-slate-500 whitespace-nowrap">{dateTime(t.createdAt)}</td>
                     </tr>
                   ))}

@@ -58,8 +58,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     "/vendor/printers": "Printers",
     "/vendor/orders": "Orders",
     "/vendor/qr": "QR Codes",
-    "/vendor/wifi-qr": "Wi-Fi QR",
-    "/vendor/users": "Users",
     "/vendor/points": "Points",
     "/vendor/transactions": "Transactions",
     "/vendor/bank-account": "Bank Account",

@@ -24,6 +24,40 @@ export function count(n: number): string {
   return n.toLocaleString("en-IN");
 }
 
+/**
+ * Prinsta Points → "1,234 pts".
+ *
+ * Points are their own unit, not money — formatting a balance with `inr()`
+ * both shows the wrong symbol and divides by 100.
+ */
+export function points(n: number | null | undefined): string {
+  return count(n ?? 0) + " pts";
+}
+
+/** 1 point = 10 paise. Mirrors PAISE_PER_POINT on the server. */
+export const PAISE_PER_POINT = 10;
+
+/**
+ * Reads a points-ledger figure that may be stored in either unit.
+ *
+ * The ledger is split down the middle by the Wallet→Points rename: rows written
+ * before it carry `amountPaise` with points left at 0, rows written after carry
+ * `amountPoints` with paise left at 0. Reading either column alone renders half
+ * the table as zero and quietly drops that half from any total — so read the
+ * points column, and fall back to converting the legacy paise.
+ */
+export function ledgerPoints(row: { amountPoints?: number; amountPaise?: number }): number;
+export function ledgerPoints(points: number | undefined, paise: number | undefined): number;
+export function ledgerPoints(
+  a: { amountPoints?: number; amountPaise?: number } | number | undefined,
+  b?: number,
+): number {
+  const pts = typeof a === "object" ? a?.amountPoints : a;
+  const paise = typeof a === "object" ? a?.amountPaise : b;
+  if (pts) return pts;
+  return Math.round((paise ?? 0) / PAISE_PER_POINT);
+}
+
 /** ISO string → "12 Jul 2026, 3:04 PM". */
 export function dateTime(iso: string | null | undefined): string {
   if (!iso) return "—";

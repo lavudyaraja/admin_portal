@@ -29,17 +29,10 @@ export default function GeneralTab({ value, onChange }: { value: Settings["gener
         <Row label="Timezone">
           <Select value={value.timezone} onChange={(v) => onChange({ timezone: v })} options={TIMEZONES.map((t) => ({ value: t, label: t }))} className="w-full" />
         </Row>
-        <Row label="Company Logo URL" hint="Paste a hosted image URL (no file storage).">
-          <TextInput value={value.companyLogoUrl} onChange={(v) => onChange({ companyLogoUrl: v })} placeholder="https://…/logo.png" />
-        </Row>
       </div>
       <Row label="Company Address">
         <TextArea value={value.companyAddress} onChange={(v) => onChange({ companyAddress: v })} placeholder="Registered business address" rows={2} />
       </Row>
-      {value.companyLogoUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={value.companyLogoUrl} alt="Logo preview" className="h-12 rounded-lg border border-slate-200 bg-white p-1" />
-      )}
     </div>
   );
 }

@@ -9,12 +9,18 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 const pathLabels: Record<string, string> = {
   "/admin/dashboard": "Dashboard",
   "/admin/revenue": "Revenue",
-  "/admin/vendors": "Vendors",
-  "/admin/printers": "Printers",
-  "/admin/orders": "Orders",
-  "/admin/users": "Users",
+  "/admin/management/vendors": "Vendors",
+  "/admin/management/printers": "Printers",
+  "/admin/management/orders": "Orders",
+  "/admin/management/users": "Users",
   "/admin/transactions": "Transactions",
-  "/admin/support": "Support",
+  "/admin/referrals": "Referrals",
+  "/admin/bank-accounts": "Bank Accounts",
+  "/admin/operations/print-queue": "Print Queue",
+  "/admin/operations/printer-health": "Printer Health",
+  "/admin/operations/verifications": "Verifications",
+  "/admin/operations/disputes": "Disputes",
+  "/admin/operations/support": "Support",
 };
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {

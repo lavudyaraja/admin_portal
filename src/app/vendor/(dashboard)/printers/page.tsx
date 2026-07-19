@@ -9,9 +9,63 @@ import {
   LuTrash2,
   LuEye,
   LuMapPin,
+  LuUsers,
+  LuFileText,
+  LuTriangleAlert,
+  LuBan,
 } from "react-icons/lu";
 import { apiFetch } from "@/lib/vendor/api";
+import { count } from "@/lib/console/format";
 import { Select } from "@/components/vendor/settings/fields";
+import { StatTile, Card, Skeleton } from "@/components/console/primitives";
+
+/** One printer's supplies and reliability, from GET /vendors/me/stats. */
+interface PrinterStat {
+  id: string;
+  name: string;
+  uniquePrinterId: string;
+  locationName: string | null;
+  status: string;
+  paperLevel: number;
+  tonerLevel: number;
+  orders: number;
+  failures: number;
+  lowPaper: boolean;
+  lowToner: boolean;
+}
+
+interface VendorStats {
+  customers: number;
+  customersThisMonth: number;
+  totalOrders: number;
+  ordersToday: number;
+  failedOrders: number;
+  cancelledOrders: number;
+  failureRate: number;
+  rejectionRate: number;
+  needsAttention: number;
+  printers: PrinterStat[];
+}
+
+/** A level bar that only shouts when the level is actually low. */
+function SupplyMeter({ label, value, low }: { label: string; value: number; low: boolean }) {
+  return (
+    <div className="w-20">
+      <div className="flex items-baseline justify-between">
+        <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{label}</span>
+        <span className={`text-[11px] font-bold tabular-nums ${low ? "text-rose-600" : "text-slate-600"}`}>
+          {value}%
+        </span>
+      </div>
+      <div className="mt-1 h-1.5 rounded-full bg-slate-100 overflow-hidden">
+        <div
+          className={`h-full rounded-full ${low ? "bg-rose-500" : "bg-emerald-500"}`}
+          style={{ width: `${Math.max(0, Math.min(100, value))}%` }}
+        />
+      </div>
+    </div>
+  );
+}
 
 interface Printer {
   id: string;
@@ -64,6 +118,13 @@ export default function PrintersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [stats, setStats] = useState<VendorStats | null>(null);
+
+  // Scoped to this shop, and independent of the filters below — narrowing the
+  // list shouldn't change what the fleet summary reports.
+  useEffect(() => {
+    apiFetch<VendorStats>("/vendors/me/stats").then(setStats).catch(() => {});
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -110,6 +171,96 @@ export default function PrintersPage() {
           <LuPlus size={18} /> Register Printer
         </Link>
       </div>
+
+      {/* ── Fleet summary ──
+          Scoped to this shop's own printers (GET /vendors/me/stats), unlike the
+          platform-wide admin figures. "Customers" is distinct people who have
+          printed here, not order count — one student printing forty times is
+          one customer. */}
+      <section className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {!stats ? (
+          Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[116px] rounded-2xl" />)
+        ) : (
+          <>
+            <StatTile
+              label="Customers"
+              value={count(stats.customers)}
+              icon={LuUsers}
+              tint="lavender"
+              hint={`${count(stats.customersThisMonth)} this month`}
+            />
+            <StatTile
+              label="Orders printed"
+              value={count(stats.totalOrders)}
+              icon={LuFileText}
+              tint="sky"
+              hint={`${count(stats.ordersToday)} today`}
+            />
+            <StatTile
+              label="Failures"
+              value={count(stats.failedOrders)}
+              icon={LuTriangleAlert}
+              tint={stats.failedOrders > 0 ? "blush" : "mint"}
+              hint={`${stats.failureRate}% of orders`}
+            />
+            <StatTile
+              label="Rejections"
+              value={count(stats.cancelledOrders)}
+              icon={LuBan}
+              tint={stats.cancelledOrders > 0 ? "gold" : "mint"}
+              hint={`${stats.rejectionRate}% cancelled`}
+            />
+          </>
+        )}
+      </section>
+
+      {/* ── Supplies & reliability, per machine ── */}
+      {stats && stats.printers.length > 0 && (
+        <Card className="overflow-hidden">
+          <div className="flex items-center gap-2 px-5 py-4 border-b border-slate-100">
+            <LuPrinter size={15} className="text-slate-400" />
+            <h2 className="text-sm font-bold text-slate-800">Paper, toner & reliability</h2>
+            {stats.needsAttention > 0 && (
+              <span className="text-[11px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md">
+                {stats.needsAttention} need{stats.needsAttention === 1 ? "s" : ""} attention
+              </span>
+            )}
+          </div>
+          <div className="divide-y divide-slate-50">
+            {stats.printers.map((p) => (
+              <div key={p.id} className="px-5 py-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="min-w-0 sm:flex-1">
+                  <p className="font-semibold text-slate-900 text-sm truncate">{p.name}</p>
+                  <p className="text-[11px] text-slate-400 truncate">
+                    <span className="font-mono">{p.uniquePrinterId}</span>
+                    {p.locationName ? ` · ${p.locationName}` : ""}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-5 shrink-0">
+                  <SupplyMeter label="Paper" value={p.paperLevel} low={p.lowPaper} />
+                  <SupplyMeter label="Toner" value={p.tonerLevel} low={p.lowToner} />
+
+                  <div className="text-right w-16">
+                    <p className="font-bold text-slate-900 tabular-nums text-sm">{count(p.orders)}</p>
+                    <p className="text-[10px] text-slate-400">orders</p>
+                  </div>
+                  <div className="text-right w-16">
+                    <p
+                      className={`font-bold tabular-nums text-sm ${
+                        p.failures > 0 ? "text-rose-600" : "text-slate-400"
+                      }`}
+                    >
+                      {count(p.failures)}
+                    </p>
+                    <p className="text-[10px] text-slate-400">failures</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -190,7 +341,7 @@ export default function PrintersPage() {
                 </div>
 
                 <div className="flex items-center gap-2 mt-4">
-                  <Link href={`/printers/${p.id}`} className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-white hover:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 hover:border-slate-900 transition-all">
+                  <Link href={`/vendor/printers/${p.id}`} className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-white hover:bg-slate-900 px-3 py-2 rounded-lg border border-slate-200 hover:border-slate-900 transition-all">
                     <LuEye size={14} /> View
                   </Link>
                   <button
@@ -239,7 +390,7 @@ export default function PrintersPage() {
                       <td className="px-5 py-4 font-semibold text-slate-900">{p._count.orders}</td>
                       <td className="px-5 py-4">
                         <div className="flex items-center gap-2">
-                          <Link href={`/printers/${p.id}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-white hover:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-900 transition-all">
+                          <Link href={`/vendor/printers/${p.id}`} className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 hover:text-white hover:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 hover:border-slate-900 transition-all">
                             <LuEye size={13} /> View
                           </Link>
                           <button

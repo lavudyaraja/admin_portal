@@ -93,9 +93,9 @@ export default function DashboardPage() {
     setError("");
     try {
       const [m, r, o] = await Promise.all([
-        apiFetch<Metrics>("/admin/metrics"),
-        apiFetch<RevenueData>(`/admin/revenue?period=${period}`),
-        apiFetch<{ orders: Order[] }>("/admin/orders?limit=6"),
+        apiFetch<Metrics>("/vendors/me/stats"),
+        apiFetch<RevenueData>(`/vendors/me/revenue?period=${period}`),
+        apiFetch<{ orders: Order[] }>("/vendors/me/orders?limit=6"),
       ]);
       setMetrics(m);
       setRevenue(r);

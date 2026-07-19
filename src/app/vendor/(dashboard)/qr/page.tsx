@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { LuQrCode, LuDownload, LuRefreshCw, LuChevronRight, LuX } from "react-icons/lu";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { LuQrCode, LuDownload, LuRefreshCw, LuChevronRight, LuX, LuSearch } from "react-icons/lu";
 import { apiFetch } from "@/lib/vendor/api";
+import { buildQrSheet } from "@/lib/vendor/qrSheet";
 
 interface PrinterLite {
   id: string;
@@ -17,6 +18,21 @@ interface PrinterFull extends PrinterLite {
   qrData: string | null;
 }
 
+/** Compact online/offline marker — one more way to tell two printers apart. */
+function StatusDot({ status }: { status: string }) {
+  const tone =
+    status === "ONLINE" ? "bg-emerald-500"
+    : status === "BUSY" || status === "PRINTING" ? "bg-amber-500"
+    : status === "ERROR" ? "bg-rose-500"
+    : "bg-slate-300";
+  return (
+    <span className="hidden sm:flex items-center gap-1.5 shrink-0" title={status}>
+      <span className={`w-1.5 h-1.5 rounded-full ${tone}`} />
+      <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">{status}</span>
+    </span>
+  );
+}
+
 export default function QrPage() {
   const [printers, setPrinters] = useState<PrinterLite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -24,6 +40,8 @@ export default function QrPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [downloading, setDownloading] = useState(false);
+  const [search, setSearch] = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -35,6 +53,16 @@ export default function QrPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // A shop with a handful of printers scrolls; one with a fleet needs to search.
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return printers;
+    return printers.filter((p) =>
+      [p.name, p.uniquePrinterId, p.locationName, p.shopName]
+        .some((f) => (f || "").toLowerCase().includes(q))
+    );
+  }, [printers, search]);
 
   async function select(id: string) {
     setSelectedId(id);
@@ -59,12 +87,32 @@ export default function QrPage() {
     setRegenerating(false);
   }
 
-  function download() {
+  /**
+   * Downloads the QR as a labelled sheet rather than a bare code. With several
+   * printers the bare images are indistinguishable once saved or printed, and
+   * taping the wrong one to a machine sends every job to the wrong tray.
+   */
+  async function download() {
     if (!selected?.qrCode) return;
-    const a = document.createElement("a");
-    a.href = selected.qrCode;
-    a.download = `${selected.uniquePrinterId}-qr.png`;
-    a.click();
+    setDownloading(true);
+    try {
+      const sheet = await buildQrSheet({
+        qrCode: selected.qrCode,
+        name: selected.name,
+        uniquePrinterId: selected.uniquePrinterId,
+        locationName: selected.locationName,
+        shopName: selected.shopName,
+      });
+      const a = document.createElement("a");
+      a.href = sheet;
+      // Name it after the printer too, so the file is identifiable before it is
+      // even opened.
+      a.download = `prinsta-${selected.uniquePrinterId}-${selected.name.replace(/[^\w-]+/g, "-")}.png`;
+      a.click();
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Could not build the QR sheet.");
+    }
+    setDownloading(false);
   }
 
   function closeMobile() {
@@ -85,7 +133,13 @@ export default function QrPage() {
       ) : (
         <div className="text-center w-full">
           <p className="font-bold text-slate-900">{selected.name}</p>
-          <p className="text-xs text-slate-400 font-mono mb-4">{selected.uniquePrinterId}</p>
+          <p className="text-xs font-mono text-rose-600">{selected.uniquePrinterId}</p>
+          {(selected.locationName || selected.shopName) && (
+            <p className="text-[11px] text-slate-400 mb-3 mt-0.5">
+              {[selected.locationName, selected.shopName].filter(Boolean).join(" · ")}
+            </p>
+          )}
+          <div className="mb-4" />
           {selected.qrCode ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={selected.qrCode} alt="QR code" className="w-48 h-48 mx-auto rounded-xl border border-slate-100" />
@@ -94,8 +148,8 @@ export default function QrPage() {
           )}
           {selected.qrData && <p className="text-[10px] text-slate-400 mt-3 break-all px-2">{selected.qrData}</p>}
           <div className="flex gap-2 mt-5">
-            <button onClick={download} disabled={!selected.qrCode} className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white disabled:opacity-40 transition-colors">
-              <LuDownload size={14} /> Download
+            <button onClick={download} disabled={!selected.qrCode || downloading} className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white disabled:opacity-40 transition-colors">
+              <LuDownload size={14} /> {downloading ? "Preparing…" : "Download sheet"}
             </button>
             <button onClick={regenerate} disabled={regenerating} className="flex-1 inline-flex items-center justify-center gap-1.5 text-xs font-bold px-3 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:border-slate-400 disabled:opacity-40 transition-colors">
               <LuRefreshCw size={14} className={regenerating ? "animate-spin" : ""} /> {regenerating ? "…" : "Regenerate"}
@@ -110,8 +164,23 @@ export default function QrPage() {
     <div className="mx-auto w-full max-w-6xl space-y-6">
       <div>
         <h1 className="text-2xl font-black text-slate-900">QR Codes</h1>
-        <p className="text-slate-400 text-sm mt-0.5">Printer QR codes — users scan these to connect.</p>
+        <p className="text-slate-400 text-sm mt-0.5">
+          One QR per printer — download the labelled sheet and tape it to that machine.
+        </p>
       </div>
+
+      {printers.length > 3 && (
+        <div className="relative max-w-md">
+          <LuSearch size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Search by printer name, ID or location…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full h-11 pl-10 pr-4 text-sm bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-rose-500/10 focus:border-rose-300 transition-all"
+          />
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6 items-start">
         {/* List */}
@@ -122,23 +191,45 @@ export default function QrPage() {
             <div className="p-12 sm:p-16 text-center text-slate-400 text-sm">No printers registered.</div>
           ) : (
             <div className="divide-y divide-slate-50">
-              {printers.map((p) => {
+              {filtered.map((p) => {
                 const active = selectedId === p.id;
                 return (
                   <button
                     key={p.id}
                     onClick={() => select(p.id)}
-                    className={`w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 text-left transition-colors ${active ? "bg-slate-50" : "hover:bg-slate-50/60"}`}
+                    className={`w-full flex items-center gap-3 px-4 sm:px-5 py-3.5 text-left transition-colors ${
+                      active ? "bg-rose-50/70" : "hover:bg-slate-50/60"
+                    }`}
                   >
-                    <span className="w-9 h-9 rounded-lg bg-slate-100 flex items-center justify-center shrink-0"><LuQrCode size={17} className="text-slate-500" /></span>
+                    {/* The selected printer gets the brand tint, so which QR is
+                        on screen stays obvious in a list of near-identical rows. */}
+                    <span
+                      className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                        active ? "bg-rose-100" : "bg-slate-100"
+                      }`}
+                    >
+                      <LuQrCode size={17} className={active ? "text-rose-600" : "text-slate-500"} />
+                    </span>
                     <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-slate-900 truncate">{p.name}</p>
-                      <p className="text-[11px] text-slate-400 truncate"><span className="font-mono">{p.uniquePrinterId}</span> · {p.shopName}</p>
+                      <p className={`font-semibold truncate ${active ? "text-rose-700" : "text-slate-900"}`}>
+                        {p.name}
+                      </p>
+                      <p className="text-[11px] text-slate-400 truncate">
+                        <span className="font-mono">{p.uniquePrinterId}</span>
+                        {p.locationName ? ` · ${p.locationName}` : ""}
+                        {p.shopName ? ` · ${p.shopName}` : ""}
+                      </p>
                     </div>
+                    <StatusDot status={p.status} />
                     <LuChevronRight size={16} className="text-slate-300 shrink-0" />
                   </button>
                 );
               })}
+              {filtered.length === 0 && (
+                <div className="p-12 text-center text-slate-400 text-sm">
+                  No printers match “{search}”.
+                </div>
+              )}
             </div>
           )}
         </div>

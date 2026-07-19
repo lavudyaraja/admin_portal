@@ -5,12 +5,9 @@ import {
   LuX,
   LuSettings2,
   LuBanknote,
-  LuCreditCard,
   LuFileText,
   LuBell,
   LuUser,
-  LuPalette,
-  LuScale,
   LuLoaderCircle,
   LuCircleCheck,
   LuCircleAlert,
@@ -19,26 +16,20 @@ import { apiFetch } from "@/lib/vendor/api";
 import type { Settings, Section } from "./types";
 import GeneralTab from "./tabs/GeneralTab";
 import PricingTab from "./tabs/PricingTab";
-import PaymentsTab from "./tabs/PaymentsTab";
 import PrintRulesTab from "./tabs/PrintRulesTab";
 import NotificationsTab from "./tabs/NotificationsTab";
 import AccountTab from "./tabs/AccountTab";
-import BrandingTab from "./tabs/BrandingTab";
-import LegalTab from "./tabs/LegalTab";
 
 export type TabId =
-  | "general" | "pricing" | "payments" | "print"
-  | "notifications" | "account" | "branding" | "legal";
+  | "general" | "pricing" | "print"
+  | "notifications" | "account";
 
 const TABS: { id: TabId; label: string; icon: React.ComponentType<{ size?: number }> }[] = [
   { id: "general", label: "General", icon: LuSettings2 },
   { id: "pricing", label: "Pricing", icon: LuBanknote },
-  { id: "payments", label: "Payments", icon: LuCreditCard },
   { id: "print", label: "Print Rules", icon: LuFileText },
   { id: "notifications", label: "Notifications", icon: LuBell },
   { id: "account", label: "Account", icon: LuUser },
-  { id: "branding", label: "Branding", icon: LuPalette },
-  { id: "legal", label: "Legal", icon: LuScale },
 ];
 
 export default function SettingsModal({ open, onClose, initialTab = "general" }: { open: boolean; onClose: () => void; initialTab?: TabId }) {
@@ -152,12 +143,9 @@ export default function SettingsModal({ open, onClose, initialTab = "general" }:
               <>
                 {tab === "general" && <GeneralTab value={settings.general} onChange={(p) => updateSection("general", p)} />}
                 {tab === "pricing" && <PricingTab value={settings.pricing} onChange={(p) => updateSection("pricing", p)} />}
-                {tab === "payments" && <PaymentsTab value={settings.payments} onChange={(p) => updateSection("payments", p)} />}
                 {tab === "print" && <PrintRulesTab value={settings.print} onChange={(p) => updateSection("print", p)} />}
                 {tab === "notifications" && <NotificationsTab value={settings.notifications} onChange={(p) => updateSection("notifications", p)} />}
                 {tab === "account" && <AccountTab />}
-                {tab === "branding" && <BrandingTab value={settings.branding} onChange={(p) => updateSection("branding", p)} />}
-                {tab === "legal" && <LegalTab value={settings.legal} onChange={(p) => updateSection("legal", p)} />}
               </>
             )}
           </div>

@@ -3,10 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { LuCoins, LuArrowDownToLine, LuBanknote, LuUsers, LuSearch } from "react-icons/lu";
 import { apiFetch } from "@/lib/vendor/api";
-import { inr } from "@/lib/console/format";
+import { inr, points, count } from "@/lib/console/format";
+import { StatTile } from "@/components/console/primitives";
 
 interface Metrics {
-  pointsTopupPaise: number;
+  totalOrders: number;
+  customersThisMonth: number;
   totalRevenuePaise: number;
   totalUsers: number;
 }
@@ -15,22 +17,7 @@ interface PointsUser {
   name: string;
   phone: string | null;
   email: string | null;
-  pointsBalancePaise: number;
-}
-
-function SummaryCard({ label, value, sub, icon: Icon, dark }: { label: string; value: string; sub?: string; icon: React.ComponentType<{ size?: number; className?: string }>; dark?: boolean }) {
-  return (
-    <div className={`rounded-2xl p-5 sm:p-6 border ${dark ? "bg-slate-900 border-slate-900 text-white" : "bg-white border-slate-200"}`}>
-      <div className="flex items-center justify-between">
-        <p className={`text-[11px] font-semibold uppercase tracking-wider ${dark ? "text-slate-300" : "text-slate-400"}`}>{label}</p>
-        <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${dark ? "bg-white/10" : "bg-slate-100"}`}>
-          <Icon size={18} className={dark ? "text-white" : "text-slate-600"} />
-        </div>
-      </div>
-      <p className={`text-2xl sm:text-3xl font-black mt-4 tracking-tight ${dark ? "text-white" : "text-slate-900"}`}>{value}</p>
-      {sub && <p className={`text-xs mt-1 ${dark ? "text-slate-400" : "text-slate-400"}`}>{sub}</p>}
-    </div>
-  );
+  pointsBalance: number;
 }
 
 export default function PointsPage() {
@@ -41,18 +28,18 @@ export default function PointsPage() {
 
   useEffect(() => {
     Promise.all([
-      apiFetch<Metrics>("/admin/metrics"),
-      apiFetch<{ users: PointsUser[] }>("/admin/users?limit=200"),
+      apiFetch<Metrics>("/vendors/me/stats"),
+      apiFetch<{ customers: PointsUser[] }>("/vendors/me/customers"),
     ])
       .then(([m, u]) => {
         setMetrics(m);
-        setUsers(u.users.filter((x) => x.pointsBalancePaise > 0).sort((a, b) => b.pointsBalancePaise - a.pointsBalancePaise));
+        setUsers((u.customers || []).filter((x) => x.pointsBalance > 0).sort((a, b) => b.pointsBalance - a.pointsBalance));
       })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 
-  const totalHeld = users.reduce((s, u) => s + u.pointsBalancePaise, 0);
+  const totalHeld = users.reduce((s, u) => s + u.pointsBalance, 0);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -65,15 +52,15 @@ export default function PointsPage() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black text-slate-900">Points</h1>
-        <p className="text-slate-400 text-sm mt-0.5">Prinsta Points balances &amp; top-ups.</p>
+        <p className="text-slate-400 text-sm mt-0.5">Points held by the customers who print at your shop.</p>
       </div>
 
       {/* Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <SummaryCard label="Balance Held" value={loading ? "—" : inr(totalHeld)} sub={`across ${users.length} Pointss`} icon={LuCoins} />
-        <SummaryCard label="Lifetime Top-ups" value={metrics ? inr(metrics.pointsTopupPaise) : "—"} sub="total credited" icon={LuArrowDownToLine} />
-        <SummaryCard label="Revenue Collected" value={metrics ? inr(metrics.totalRevenuePaise) : "—"} sub="from completed orders" icon={LuBanknote} />
-        <SummaryCard label="Active Pointss" value={loading ? "—" : users.length.toLocaleString()} sub="with a balance" icon={LuUsers} />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <StatTile label="Balance Held" value={loading ? "—" : points(totalHeld)} hint={`across ${users.length} ${users.length === 1 ? "user" : "users"}`} icon={LuCoins} tint="lavender" />
+        <StatTile label="Orders here" value={metrics ? count(metrics.totalOrders) : "—"} hint={metrics ? `${count(metrics.customersThisMonth)} customers this month` : undefined} icon={LuArrowDownToLine} tint="mint" />
+        <StatTile label="Revenue Collected" value={metrics ? inr(metrics.totalRevenuePaise) : "—"} hint="from completed orders" icon={LuBanknote} tint="sky" />
+        <StatTile label="Users with Points" value={loading ? "—" : count(users.length)} hint="with a balance" icon={LuUsers} tint="gold" />
       </div>
 
       {/* Search */}
@@ -81,22 +68,22 @@ export default function PointsPage() {
         <LuSearch size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
         <input
           type="text"
-          placeholder="Search Points holder…"
+          placeholder="Search by name, phone or email…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full h-11 pl-10 pr-4 text-sm bg-white border border-slate-200 rounded-xl text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-900/10 focus:border-slate-400 transition-all"
         />
       </div>
 
-      {/* Pointss */}
+      {/* Holders */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
         <div className="px-5 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800 text-sm">Pointss with Balance</h3>
+          <h3 className="font-bold text-slate-800 text-sm">Users with a Points Balance</h3>
         </div>
         {loading ? (
           <div className="p-12 text-center text-slate-400 text-sm">Loading…</div>
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center text-slate-400 text-sm">{search ? "No Pointss match your search." : "No Points balances yet."}</div>
+          <div className="p-12 text-center text-slate-400 text-sm">{search ? "No users match your search." : "No Points balances yet."}</div>
         ) : (
           <>
             {/* Cards — mobile */}
@@ -108,7 +95,7 @@ export default function PointsPage() {
                     <p className="font-semibold text-slate-900 text-sm truncate">{u.name}</p>
                     <p className="text-[11px] text-slate-400 truncate">{u.phone || u.email || "—"}</p>
                   </div>
-                  <p className="font-bold text-slate-900 shrink-0">{inr(u.pointsBalancePaise)}</p>
+                  <p className="font-bold text-slate-900 shrink-0">{points(u.pointsBalance)}</p>
                 </div>
               ))}
             </div>
@@ -133,7 +120,7 @@ export default function PointsPage() {
                         </div>
                       </td>
                       <td className="px-5 py-4 text-xs text-slate-500">{u.phone || u.email || "—"}</td>
-                      <td className="px-5 py-4 font-bold text-slate-900">{inr(u.pointsBalancePaise)}</td>
+                      <td className="px-5 py-4 font-bold text-slate-900">{points(u.pointsBalance)}</td>
                     </tr>
                   ))}
                 </tbody>

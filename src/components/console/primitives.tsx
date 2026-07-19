@@ -183,8 +183,21 @@ export function Table({ head, children }: { head: string[]; children: ReactNode 
   );
 }
 
-export function Td({ className, children }: { className?: string; children: ReactNode }) {
-  return <td className={cx("px-5 py-3 text-slate-600 align-middle", className)}>{children}</td>;
+export function Td({
+  className,
+  children,
+  colSpan,
+}: {
+  className?: string;
+  /** Optional so an empty spacer cell doesn't need a dummy child. */
+  children?: ReactNode;
+  colSpan?: number;
+}) {
+  return (
+    <td className={cx("px-5 py-3 text-slate-600 align-middle", className)} colSpan={colSpan}>
+      {children}
+    </td>
+  );
 }
 
 export function Tr({ children }: { children: ReactNode }) {

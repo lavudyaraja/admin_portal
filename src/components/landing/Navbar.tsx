@@ -131,6 +131,26 @@ export default function Navbar() {
     setMobileOpen(false);
   }, [pathname]);
 
+  // While the drawer is open it owns the screen: freeze the page behind it so
+  // scrolling the drawer doesn't drag the landing page along underneath, and
+  // let Escape close it.
+  useEffect(() => {
+    if (!mobileOpen) return;
+
+    const { overflow } = document.body.style;
+    document.body.style.overflow = "hidden";
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+
+    return () => {
+      document.body.style.overflow = overflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [mobileOpen]);
+
   return (
     <nav
       className={`fixed left-1/2 -translate-x-1/2 z-50 w-[calc(100%-1.5rem)] sm:w-[calc(100%-3rem)] transition-all duration-300 ease-out ${
@@ -220,8 +240,23 @@ export default function Navbar() {
       </div>
 
       {/* ── Mobile drawer ── */}
+      {/* Tap-anywhere-else to dismiss. Sits behind the drawer but above the
+          page, and is only rendered while open. */}
       {mobileOpen && (
-        <div className="lg:hidden mt-2 rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-xl shadow-xl px-3 py-3">
+        <button
+          type="button"
+          aria-label="Close menu"
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden fixed inset-0 -z-10 cursor-default bg-slate-950/20 backdrop-blur-[2px]"
+        />
+      )}
+      {mobileOpen && (
+        // The drawer is taller than a phone screen once the role links are in,
+        // and its parent is `fixed` — so without a viewport-bounded height and
+        // its own scroll the last entries simply fell off the bottom with no
+        // way to reach them. `dvh` rather than `vh` so the mobile browser's
+        // collapsing address bar doesn't hide the end of the list either.
+        <div className="lg:hidden mt-2 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain rounded-2xl border border-slate-200 bg-white/95 backdrop-blur-xl shadow-xl px-3 py-3">
           <div className="space-y-1">
             {NAV.map((item, i) => (
               <Link

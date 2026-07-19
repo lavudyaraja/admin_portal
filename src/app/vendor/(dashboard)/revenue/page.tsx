@@ -48,7 +48,7 @@ export default function RevenuePage() {
     setLoading(true);
     setError("");
     try {
-      setData(await apiFetch<RevenueData>(`/admin/revenue?period=${period}`));
+      setData(await apiFetch<RevenueData>(`/vendors/me/revenue?period=${period}`));
     } catch (err) {
       // The previous version swallowed this, so a failed request looked exactly
       // like a shop that had simply earned nothing yet.

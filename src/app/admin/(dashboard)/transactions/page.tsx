@@ -1,12 +1,14 @@
 "use client";
 
-import { LuHistory } from "react-icons/lu";
+import { LuHistory, LuArrowDownLeft, LuCoins, LuUsers } from "react-icons/lu";
 import { useList } from "@/lib/console/useList";
+import { useMetrics } from "@/lib/admin/useMetrics";
+import { StatRow } from "@/components/admin/StatRow";
 import { apiFetch, type TransactionRow } from "@/lib/admin/api";
-import { inr2, dateTime } from "@/lib/console/format";
+import { inr2, inrCompact, dateTime, count, points } from "@/lib/console/format";
 import { ListToolbar, Pagination } from "@/components/console/ListToolbar";
 import {
-  Card, Table, Td, Tr, Chip, Skeleton, ErrorState, EmptyState, PageHeader, Pill,
+  Card, Table, Td, Tr, Chip, Skeleton, ErrorState, EmptyState, PageHeader, Pill, StatTile,
 } from "@/components/console/primitives";
 
 const TYPES = [
@@ -15,6 +17,7 @@ const TYPES = [
 ];
 
 export default function TransactionsPage() {
+  const m = useMetrics();
   const list = useList<TransactionRow>(apiFetch, "/admin/transactions", "transactions", "type");
 
   return (
@@ -24,6 +27,17 @@ export default function TransactionsPage() {
         subtitle="Points top-ups and spend across all users."
         action={<Pill n={list.total} />}
       />
+
+      <StatRow loading={!m}>
+        {m && (
+          <>
+            <StatTile label="Transactions" value={count(list.total)} icon={LuHistory} tint="lavender" hint="ledger entries" />
+            <StatTile label="Points topped up" value={points(m.pointsToppedUp)} icon={LuCoins} tint="mint" hint={inrCompact(m.pointsTopupPaise)} />
+            <StatTile label="Revenue collected" value={inrCompact(m.totalRevenuePaise)} icon={LuArrowDownLeft} tint="sky" hint="from completed orders" />
+            <StatTile label="Accounts" value={count(m.allUsersCount)} icon={LuUsers} tint="gold" hint={`${count(m.studentCount)} students`} />
+          </>
+        )}
+      </StatRow>
 
       <ListToolbar
         search={list.search}

@@ -95,13 +95,30 @@ export function Select({
   placeholder?: string;
   disabled?: boolean;
 }) {
+  // An "all"/"any" option is conventionally modelled as value "", but the select
+  // reads an empty value as *nothing selected* and shows the placeholder — so
+  // filters sat on "Select…" while actually filtering by "All statuses". Swap in
+  // a sentinel for the trip through the control and swap it back out on change,
+  // so callers keep using "" and the trigger shows the real label.
+  const ALL = "__all__";
+  const toInner = (v: string) => (v === "" ? ALL : v);
+  const innerOptions = options.map((o) => ({ ...o, value: toInner(o.value) }));
+
   return (
-    <ShadSelect items={options} value={value} onValueChange={(v) => onChange(String(v ?? ""))} disabled={disabled}>
+    <ShadSelect
+      items={innerOptions}
+      value={toInner(value)}
+      onValueChange={(v) => {
+        const next = String(v ?? "");
+        onChange(next === ALL ? "" : next);
+      }}
+      disabled={disabled}
+    >
       <SelectTrigger className={cn("h-11 rounded-xl border-slate-200 bg-white px-3.5 text-sm text-slate-900", className)}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent className="rounded-xl">
-        {options.map((o) => (
+        {innerOptions.map((o) => (
           <SelectItem key={o.value} value={o.value} className="rounded-md py-2 text-sm">
             {o.label}
           </SelectItem>

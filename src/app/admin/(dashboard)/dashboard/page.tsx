@@ -153,7 +153,7 @@ export default function DashboardPage() {
               icon={<LuCircleOff size={16} className="text-slate-500" />}
               title={`${metrics.offlinePrinters} printer${metrics.offlinePrinters > 1 ? "s" : ""} offline`}
               hint="Vendors can't take orders on these."
-              href="/admin/printers"
+              href="/admin/management/printers"
             />
           )}
           {metrics.lowPaperCount > 0 && (
@@ -162,7 +162,7 @@ export default function DashboardPage() {
               icon={<LuTriangleAlert size={16} className="text-ink-gold" />}
               title={`${metrics.lowPaperCount} printer${metrics.lowPaperCount > 1 ? "s" : ""} low on paper`}
               hint="At or below 20% remaining."
-              href="/admin/printers"
+              href="/admin/management/printers"
             />
           )}
           {metrics.failedOrders > 0 && (
@@ -215,7 +215,7 @@ export default function DashboardPage() {
             subtitle="By revenue in the selected period"
             action={
               <Link
-                href="/admin/printers"
+                href="/admin/management/printers"
                 className="text-[11px] font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1 transition-colors"
               >
                 All printers <LuArrowRight size={12} />
