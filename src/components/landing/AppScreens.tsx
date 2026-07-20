@@ -25,12 +25,12 @@ export interface AppScreen {
 }
 
 export const APP_SCREENS: AppScreen[] = [
-  { src: "/app-screens/01-home.png", label: "Home" },
-  { src: "/app-screens/02-scan.png", label: "Scan" },
-  { src: "/app-screens/03-upload.png", label: "Upload" },
-  { src: "/app-screens/04-preview.png", label: "Preview" },
-  { src: "/app-screens/05-payment.png", label: "Payment" },
-  { src: "/app-screens/06-orders.png", label: "Orders" },
+  { src: "/app-screens/Dashboard.jpeg", label: "Home" },
+  { src: "/app-screens/upload.jpeg", label: "Upload" },
+  { src: "/app-screens/orders.jpeg", label: "Orders" },
+  { src: "/app-screens/points.jpeg", label: "payments" },
+  { src: "/app-screens/findprinters.jpeg", label: "Find Printers" },
+//   { src: "/app-screens/06-orders.png", label: "Orders" },
 ];
 
 /**
@@ -64,9 +64,6 @@ function PhoneFrame({ screen }: { screen: AppScreen }) {
   return (
     <div className="rounded-[1.75rem] bg-slate-900 p-2 shadow-xl ring-1 ring-white/10">
       <div className="relative aspect-[9/19.5] overflow-hidden rounded-[1.35rem] bg-slate-800">
-        {/* Dynamic island, drawn over whatever fills the frame. */}
-        <span className="absolute left-1/2 top-1.5 z-10 h-3 w-12 sm:h-3.5 sm:w-16 -translate-x-1/2 rounded-full bg-slate-950/90" />
-
         {missing ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-3 text-center">
             <LuImage size={22} className="text-slate-600" />

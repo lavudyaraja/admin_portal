@@ -8,12 +8,15 @@ import AdminSidebar from "@/components/admin/AdminSidebar";
 
 const pathLabels: Record<string, string> = {
   "/admin/dashboard": "Dashboard",
-  "/admin/revenue": "Revenue",
+  "/admin/finance/revenue": "Revenue",
   "/admin/management/vendors": "Vendors",
   "/admin/management/printers": "Printers",
   "/admin/management/orders": "Orders",
   "/admin/management/users": "Users",
-  "/admin/transactions": "Transactions",
+  "/admin/finance/transactions": "Transactions",
+  "/admin/finance/refunds": "Refunds",
+  "/admin/finance/commissions": "Commissions",
+  "/admin/finance/payouts": "Payouts",
   "/admin/referrals": "Referrals",
   "/admin/bank-accounts": "Bank Accounts",
   "/admin/operations/print-queue": "Print Queue",
