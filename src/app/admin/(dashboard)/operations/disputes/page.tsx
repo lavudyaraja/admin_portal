@@ -26,10 +26,15 @@ interface Dispute {
   subject: string;
   description: string;
   status: string;
+  refundRequested: boolean;
+  forwardedAt: string | null;
+  forwardNote: string | null;
+  refundId: string | null;
   resolution: string | null;
   resolvedAt: string | null;
   createdAt: string;
   user: { id: string; name: string; phone: string | null; email: string | null } | null;
+  vendor: { id: string; shopName: string } | null;
   printer: { name: string; uniquePrinterId: string; shopName: string } | null;
   order: { id: string; orderCode: string; status: string; costPaise: number } | null;
   _count: { photos: number };
@@ -39,7 +44,9 @@ interface DisputeData {
   total: number;
   open: number;
   inReview: number;
+  forwarded: number;
   resolved: number;
+  refunded: number;
   rejected: number;
   disputes: Dispute[];
 }
@@ -101,22 +108,41 @@ function DisputesPageBody() {
     setSaving(false);
   }
 
+  // Grant the refund the issue asked for — the only place a complaint-driven
+  // refund is issued. Credits the customer's Points and notifies both sides.
+  async function refund() {
+    if (!active) return;
+    if (!confirm(`Refund the customer for ${active.order?.orderCode || active.code}? This credits their Points and can't be undone.`)) return;
+    setSaving(true);
+    try {
+      await apiFetch(`/admin/disputes/${active.id}/refund`, { method: "POST", body: { resolution: reply } });
+      setActive(null);
+      setReply("");
+      await load();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Could not issue the refund.");
+    }
+    setSaving(false);
+  }
+
   const rows = useMemo(() => {
     const all = data?.disputes || [];
     switch (tab) {
-      case "open": return all.filter((d) => d.status === "OPEN" || d.status === "IN_REVIEW");
-      case "closed": return all.filter((d) => d.status === "RESOLVED" || d.status === "REJECTED");
+      case "open": return all.filter((d) => d.status === "OPEN" || d.status === "IN_REVIEW" || d.status === "FORWARDED");
+      case "forwarded": return all.filter((d) => d.status === "FORWARDED");
+      case "closed": return all.filter((d) => d.status === "RESOLVED" || d.status === "REFUNDED" || d.status === "REJECTED");
       default: return all;
     }
   }, [data, tab]);
 
   const tabs: OpsTab[] = [
-    { id: "open", label: "Open Cases", icon: LuFolderOpen, count: data ? data.open + data.inReview : undefined },
+    { id: "open", label: "Open Cases", icon: LuFolderOpen, count: data ? data.open + data.inReview + data.forwarded : undefined },
+    { id: "forwarded", label: "Forwarded Refunds", icon: LuSend, count: data?.forwarded },
     { id: "users", label: "User Complaints", icon: LuUser, count: data?.total },
     { id: "vendors", label: "Vendor Complaints", icon: LuStore },
     { id: "refunds", label: "Refund Disputes", icon: LuUndo2, count: refunds?.total },
-    { id: "resolution", label: "Resolution Center", icon: LuGavel, count: data ? data.open + data.inReview : undefined },
-    { id: "closed", label: "Closed Cases", icon: LuCircleCheck, count: data ? data.resolved + data.rejected : undefined },
+    { id: "resolution", label: "Resolution Center", icon: LuGavel, count: data ? data.open + data.inReview + data.forwarded : undefined },
+    { id: "closed", label: "Closed Cases", icon: LuCircleCheck, count: data ? data.resolved + data.refunded + data.rejected : undefined },
   ];
 
   const DisputeTable = ({ list, actionable }: { list: Dispute[]; actionable?: boolean }) =>
@@ -129,6 +155,11 @@ function DisputesPageBody() {
             <Td>
               <p className="font-mono text-xs font-semibold text-slate-700">{d.code}</p>
               {d._count.photos > 0 && <p className="text-[10px] text-slate-400">{d._count.photos} photo(s)</p>}
+              {d.refundRequested && (
+                <span className="mt-1 inline-flex items-center gap-1 rounded bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700">
+                  <LuUndo2 size={10} /> Refund asked
+                </span>
+              )}
             </Td>
             <Td>
               {d.user ? (
@@ -224,8 +255,8 @@ function DisputesPageBody() {
       ) : (
         <Card>
           <DisputeTable
-            list={tab === "resolution" ? (data?.disputes || []).filter((d) => d.status === "OPEN" || d.status === "IN_REVIEW") : rows}
-            actionable={tab === "resolution" || tab === "open"}
+            list={tab === "resolution" ? (data?.disputes || []).filter((d) => d.status === "OPEN" || d.status === "IN_REVIEW" || d.status === "FORWARDED") : rows}
+            actionable={tab === "resolution" || tab === "open" || tab === "forwarded"}
           />
         </Card>
       )}
@@ -255,6 +286,23 @@ function DisputesPageBody() {
               </p>
             )}
 
+            {active.refundRequested && (
+              <div className="rounded-xl border border-violet-200 bg-violet-50 p-3.5 mb-4">
+                <p className="flex items-center gap-1.5 text-xs font-bold text-violet-800">
+                  <LuUndo2 size={13} /> Refund requested
+                  {active.refundId ? " · already refunded" : ""}
+                </p>
+                {active.forwardedAt && (
+                  <p className="mt-1 text-[11px] text-violet-700">
+                    Forwarded by {active.vendor?.shopName || "the shop"} on {dateTime(active.forwardedAt)}
+                  </p>
+                )}
+                {active.forwardNote && (
+                  <p className="mt-1 text-xs text-slate-600 whitespace-pre-wrap">“{active.forwardNote}”</p>
+                )}
+              </div>
+            )}
+
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
               Reply to the customer
             </label>
@@ -270,6 +318,15 @@ function DisputesPageBody() {
             </p>
 
             <div className="flex flex-wrap gap-2 mt-5">
+              {active.refundRequested && active.order && !active.refundId && (
+                <button
+                  onClick={refund}
+                  disabled={saving}
+                  className="flex-1 min-w-32 inline-flex items-center justify-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  <LuUndo2 size={14} /> Refund &amp; resolve
+                </button>
+              )}
               <button
                 onClick={() => resolve("RESOLVED")}
                 disabled={saving}

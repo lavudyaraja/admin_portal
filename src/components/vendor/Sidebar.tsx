@@ -11,6 +11,7 @@ import {
   LuBanknote,
   LuStore,
   LuUsers,
+  LuMessageSquareWarning,
   LuWallet,
   LuScale,
   LuUndo2,
@@ -22,6 +23,7 @@ import {
   LuBookOpen,
   LuMail,
   LuPercent,
+  LuBadgeCheck,
 } from "react-icons/lu";
 import ConsoleSidebar, { type NavGroup } from "@/components/console/ConsoleSidebar";
 import type { AdminUser } from "@/lib/vendor/api";
@@ -48,6 +50,7 @@ const NAV: NavGroup[] = [
       { label: "All Orders", href: "/vendor/orders", icon: LuFileText },
       { label: "All Printers", href: "/vendor/printers", icon: LuPrinter },
       { label: "Customers", href: "/vendor/customers", icon: LuUsers },
+      { label: "Issues", href: "/vendor/issues", icon: LuMessageSquareWarning },
     ],
   },
   {
@@ -87,6 +90,7 @@ const NAV: NavGroup[] = [
     // Duplicating them in the sidebar meant two doors to the same room.
     label: "Settings",
     items: [
+      { label: "KYC & Verification", href: "/vendor/kyc", icon: LuBadgeCheck },
       { label: "Bank Accounts", href: "/vendor/bank-account", icon: LuBanknote },
       { label: "Pricing Rules", href: "/vendor/settings/pricing", icon: LuPercent },
     ],

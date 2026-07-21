@@ -40,6 +40,7 @@ export default function QrPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [regenerating, setRegenerating] = useState(false);
+  const [regeneratingAll, setRegeneratingAll] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -85,6 +86,21 @@ export default function QrPage() {
       alert(e instanceof Error ? e.message : "Failed to regenerate");
     }
     setRegenerating(false);
+  }
+
+  /** Reissue every printer's QR in the new (Wi-Fi) format in one go. */
+  async function regenerateAll() {
+    if (regeneratingAll) return;
+    if (!confirm("Reissue the QR code for every one of your printers? Reprint and re-tape the new sheets afterwards.")) return;
+    setRegeneratingAll(true);
+    try {
+      const res = await apiFetch<{ updated: number; total: number }>("/printers/regenerate-all-qr", { method: "POST" });
+      if (selectedId) await select(selectedId); // refresh the open one's image
+      alert(`Reissued ${res.updated} of ${res.total} QR codes. Download and re-tape the new sheets.`);
+    } catch (e: unknown) {
+      alert(e instanceof Error ? e.message : "Failed to regenerate all QR codes.");
+    }
+    setRegeneratingAll(false);
   }
 
   /**
@@ -162,11 +178,24 @@ export default function QrPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-black text-slate-900">QR Codes</h1>
-        <p className="text-slate-400 text-sm mt-0.5">
-          One QR per printer — download the labelled sheet and tape it to that machine.
-        </p>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-black text-slate-900">QR Codes</h1>
+          <p className="text-slate-400 text-sm mt-0.5">
+            One QR per printer — download the labelled sheet and tape it to that machine. Scanning it
+            joins the printer&apos;s Wi-Fi and prints.
+          </p>
+        </div>
+        {printers.length > 0 && (
+          <button
+            onClick={regenerateAll}
+            disabled={regeneratingAll}
+            className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-2.5 rounded-lg border border-slate-200 text-slate-600 hover:border-slate-400 disabled:opacity-40 transition-colors shrink-0"
+          >
+            <LuRefreshCw size={14} className={regeneratingAll ? "animate-spin" : ""} />
+            {regeneratingAll ? "Reissuing…" : "Regenerate all"}
+          </button>
+        )}
       </div>
 
       {printers.length > 3 && (

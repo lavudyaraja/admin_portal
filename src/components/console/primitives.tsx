@@ -135,7 +135,11 @@ const STATUS_TINT: Record<string, TintName> = {
   MAINTENANCE: "gold",
   OPEN: "gold",
   IN_PROGRESS: "sky",
+  IN_REVIEW: "gold",
+  FORWARDED: "sky",
   RESOLVED: "mint",
+  REFUNDED: "mint",
+  REJECTED: "blush",
   CLOSED: "gray",
 };
 

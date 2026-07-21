@@ -6,6 +6,7 @@ import { LuMenu } from "react-icons/lu";
 import { apiFetch, getToken, clearToken, isConsoleRole, type AdminUser } from "@/lib/vendor/api";
 import Sidebar from "@/components/vendor/Sidebar";
 import SettingsModal, { type TabId } from "@/components/vendor/settings/SettingsModal";
+import NotificationBell from "@/components/vendor/NotificationBell";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -61,6 +62,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     "/vendor/points": "Points",
     "/vendor/transactions": "Transactions",
     "/vendor/bank-account": "Bank Account",
+    "/vendor/kyc": "KYC & Verification",
     "/vendor/support": "Support",
     "/settings": "Settings",
   };
@@ -102,9 +104,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <span className="font-semibold text-slate-700 truncate">{activeLabel}</span>
             </div>
           </div>
-          <span className="text-[11px] font-bold text-slate-500 bg-tint-lavender px-2.5 py-1 rounded-lg border border-slate-200/70 uppercase tracking-wide">
-            {user?.role || "—"}
-          </span>
+          <div className="flex items-center gap-2">
+            <NotificationBell />
+            <span className="text-[11px] font-bold text-slate-500 bg-tint-lavender px-2.5 py-1 rounded-lg border border-slate-200/70 uppercase tracking-wide">
+              {user?.role || "—"}
+            </span>
+          </div>
         </header>
         <main className="flex-1 p-4 sm:p-6 lg:p-7">{children}</main>
       </div>

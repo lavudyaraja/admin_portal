@@ -41,7 +41,17 @@ interface ShopItem {
   rejectedAt: string | null;
   verificationNote: string | null;
   createdAt: string;
-  user: { id: string; name: string; email: string | null } | null;
+  legalName: string | null;
+  panNumber: string | null;
+  aadhaarNumber: string | null;
+  gstin: string | null;
+  kycSubmittedAt: string | null;
+  user: {
+    id: string;
+    name: string;
+    email: string | null;
+    bankAccount: { accountHolder: string; ifsc: string; bankName: string | null; verified: boolean } | null;
+  } | null;
   _count: { printers: number; orders: number };
 }
 
@@ -227,7 +237,7 @@ function VerificationsPageBody() {
           {!data || data.shop.items.length === 0 ? (
             <EmptyState icon={LuStore} title="No shops" hint="Vendor profiles appear here for review." />
           ) : (
-            <Table head={["Shop", "Owner", "Printers", "Orders", "Registered", "Status", "Action"]}>
+            <Table head={["Shop", "Owner", "KYC", "Printers", "Registered", "Status", "Action"]}>
               {data.shop.items.map((s) => (
                 <Tr key={s.id}>
                   <Td className="font-semibold text-slate-700">{s.shopName}</Td>
@@ -235,8 +245,22 @@ function VerificationsPageBody() {
                     <p>{s.user?.name || s.contactName || "—"}</p>
                     <p className="text-[11px] text-slate-400">{s.mobileNumber || s.user?.email || ""}</p>
                   </Td>
+                  <Td className="text-[11px] text-slate-600">
+                    {s.kycSubmittedAt ? (
+                      <div className="space-y-0.5 font-mono">
+                        {s.legalName && <p className="font-sans text-slate-500">{s.legalName}</p>}
+                        <p>PAN {s.panNumber || "—"}</p>
+                        <p>AADHAAR {s.aadhaarNumber || "—"}</p>
+                        {s.gstin && <p>GST {s.gstin}</p>}
+                        <p className="font-sans text-[10px] text-slate-400">
+                          Bank {s.user?.bankAccount ? `${s.user.bankAccount.ifsc}${s.user.bankAccount.verified ? " ✓" : ""}` : "not on file"}
+                        </p>
+                      </div>
+                    ) : (
+                      <span className="text-slate-300">not submitted</span>
+                    )}
+                  </Td>
                   <Td className="tabular-nums">{count(s._count.printers)}</Td>
-                  <Td className="tabular-nums">{count(s._count.orders)}</Td>
                   <Td className="text-slate-400 text-xs whitespace-nowrap">{dateOnly(s.createdAt)}</Td>
                   <Td><VerifyState verifiedAt={s.verifiedAt} rejectedAt={s.rejectedAt} /></Td>
                   <Td><ActionButtons kind="shop" id={s.id} /></Td>
