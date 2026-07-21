@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { SidebarNav } from "./SidebarNav";
 import type { IconType } from "react-icons";
 import {
   LuLogOut,
@@ -87,7 +88,6 @@ export default function ConsoleSidebar({
   setMobileOpen,
   logout,
 }: ConsoleSidebarProps) {
-  const pathname = usePathname();
   const [profileOpen, setProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -197,79 +197,16 @@ export default function ConsoleSidebar({
             screen the lower groups became unreachable in collapsed mode. The
             tooltip is the thing that gives way: collapsed items already carry a
             native `title`, so the label is still available on hover. */}
-        <nav className="flex-1 py-3 space-y-5 px-2.5 overflow-y-auto overflow-x-hidden no-scrollbar">
-          {navGroups.map((group) => (
-            <div key={group.label} className="space-y-1">
-              <p
-                className={cx(
-                  "text-[10px] font-bold text-slate-400 uppercase tracking-widest px-2 mb-1.5",
-                  collapsed && "lg:hidden"
-                )}
-              >
-                {group.label}
-              </p>
-              {group.items.map((item) => {
-                const active = pathname === item.href || pathname.startsWith(item.href + "/");
-                const Icon = item.icon;
-
-                // Unbuilt sections render as a plain row, not a link — the
-                // structure is visible without the click going nowhere.
-                if (item.soon) {
-                  return (
-                    <div
-                      key={item.href}
-                      title={collapsed ? `${item.label} — coming soon` : undefined}
-                      className={cx(
-                        "flex items-center gap-3 rounded-lg text-sm font-medium relative group px-3 py-2.5 cursor-default text-slate-400",
-                        collapsed && "lg:justify-center lg:px-0 lg:h-11 lg:py-0"
-                      )}
-                    >
-                      <span className="shrink-0 text-slate-300">
-                        <Icon size={19} />
-                      </span>
-                      <span className={cx("truncate flex-1", collapsed && "lg:hidden")}>{item.label}</span>
-                      <span
-                        className={cx(
-                          "text-[9px] font-bold uppercase tracking-wide text-slate-400 bg-slate-200/70 px-1.5 py-0.5 rounded shrink-0",
-                          collapsed && "lg:hidden"
-                        )}
-                      >
-                        Soon
-                      </span>
-                    </div>
-                  );
-                }
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    title={collapsed ? item.label : undefined}
-                    className={cx(
-                      "flex items-center gap-3 rounded-lg text-sm font-medium transition-colors group relative cursor-pointer px-3 py-2.5",
-                      collapsed && "lg:justify-center lg:px-0 lg:h-11 lg:py-0",
-                      active
-                        ? "bg-slate-900 text-white"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-200/60"
-                    )}
-                  >
-                    <span
-                      className={cx(
-                        "shrink-0 transition-colors",
-                        active ? "text-white" : "text-slate-400 group-hover:text-slate-700"
-                      )}
-                    >
-                      <Icon size={19} />
-                    </span>
-                    <span className={cx("truncate", collapsed && "lg:hidden")}>{item.label}</span>
-
-                  </Link>
-                );
-              })}
-            </div>
-          ))}
-        </nav>
+        {/* `useSearchParams` (for tab-aware highlighting) forces anything that
+            reads it under a Suspense boundary — without one, every page that
+            renders this sidebar fails to prerender. */}
+        <Suspense fallback={<div className="flex-1" />}>
+          <SidebarNav
+            navGroups={navGroups}
+            collapsed={collapsed}
+            setMobileOpen={setMobileOpen}
+          />
+        </Suspense>
 
         {/* Profile */}
         <div className="px-2 py-3 border-t border-slate-200 relative" ref={profileRef}>

@@ -26,6 +26,7 @@ import {
   LuLock,
   LuSettings,
   LuShieldCheck,
+  LuStar,
 } from "react-icons/lu";
 import ConsoleSidebar, { type NavGroup } from "@/components/console/ConsoleSidebar";
 import type { OperatorUser } from "@/lib/admin/api";
@@ -50,6 +51,7 @@ const NAV: NavGroup[] = [
       { label: "Vendors", href: "/admin/management/vendors", icon: LuStore },
       { label: "Printers", href: "/admin/management/printers", icon: LuPrinter },
       { label: "Orders", href: "/admin/management/orders", icon: LuFileText },
+      { label: "Ratings", href: "/admin/management/ratings", icon: LuStar },
     ],
   },
   {
@@ -59,6 +61,7 @@ const NAV: NavGroup[] = [
       { label: "Printer Health", href: "/admin/operations/printer-health", icon: LuActivity },
       { label: "Verifications", href: "/admin/operations/verifications", icon: LuBadgeCheck },
       { label: "Disputes", href: "/admin/operations/disputes", icon: LuScale },
+      { label: "Refund Requests", href: "/admin/operations/refund-requests", icon: LuUndo2 },
       { label: "Support", href: "/admin/operations/support", icon: LuCircleHelp },
     ],
   },

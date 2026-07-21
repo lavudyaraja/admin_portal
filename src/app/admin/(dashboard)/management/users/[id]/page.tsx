@@ -11,7 +11,7 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   LuArrowLeft, LuUser, LuCoins, LuHistory, LuFileText,
-  LuUndo2, LuGift, LuPrinter, LuLifeBuoy, LuClock,
+  LuUndo2, LuGift, LuPrinter, LuLifeBuoy, LuClock, LuStar,
 } from "react-icons/lu";
 import type { IconType } from "react-icons";
 import { apiFetch, type UserProfile } from "@/lib/admin/api";
@@ -19,6 +19,7 @@ import { Card, Skeleton, ErrorState, PageHeader, Chip } from "@/components/conso
 import {
   ProfileSection, PointsSection, TransactionsSection, OrdersSection,
   RefundsSection, ReferralsSection, PrintersSection, SupportSection, ActivitySection,
+  RatingsSection,
 } from "@/components/admin/users/sections";
 
 const TABS: { id: string; label: string; icon: IconType }[] = [
@@ -29,6 +30,7 @@ const TABS: { id: string; label: string; icon: IconType }[] = [
   { id: "refunds", label: "Refunds", icon: LuUndo2 },
   { id: "referrals", label: "Referrals", icon: LuGift },
   { id: "printers", label: "Saved Printers", icon: LuPrinter },
+  { id: "ratings", label: "Ratings", icon: LuStar },
   { id: "support", label: "Support History", icon: LuLifeBuoy },
   { id: "activity", label: "Activity", icon: LuClock },
 ];
@@ -138,6 +140,7 @@ function UserProfilePageBody() {
           {tab === "refunds" && <RefundsSection data={data} />}
           {tab === "referrals" && <ReferralsSection data={data} />}
           {tab === "printers" && <PrintersSection data={data} />}
+          {tab === "ratings" && <RatingsSection data={data} />}
           {tab === "support" && <SupportSection data={data} />}
           {tab === "activity" && <ActivitySection data={data} />}
         </>

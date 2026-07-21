@@ -8,7 +8,7 @@
 
 import {
   LuFileText, LuPrinter, LuCoins, LuScale, LuLifeBuoy, LuGift,
-  LuUndo2, LuClock, LuUserPlus, LuArrowDownLeft, LuArrowUpRight,
+  LuUndo2, LuClock, LuUserPlus, LuArrowDownLeft, LuArrowUpRight, LuStar,
 } from "react-icons/lu";
 import type {
   UserProfile, UserOrder, UserTxn, UserRefund, UserComplaint, UserTicket,
@@ -16,8 +16,9 @@ import type {
 } from "@/lib/admin/api";
 import { inr, points, ledgerPoints, count, dateOnly, dateTime } from "@/lib/console/format";
 import {
-  Card, Table, Td, Tr, StatusChip, Chip, EmptyState, StatTile,
+  Card, CardHeader, Table, Td, Tr, StatusChip, Chip, EmptyState, StatTile,
 } from "@/components/console/primitives";
+import { RatingCard, RatingSummaryCard } from "@/components/console/ratings";
 
 // ── Profile ──────────────────────────────────────────────────────────────────
 
@@ -253,6 +254,73 @@ export function PrintersSection({ data }: { data: UserProfile }) {
           </Table>
         </Card>
       )}
+    </div>
+  );
+}
+
+// ── Ratings ──────────────────────────────────────────────────────────────────
+
+/**
+ * Both sides of this customer's rating history.
+ *
+ * "Received" is their standing — what shops thought of them, and the reason a
+ * vendor might refuse an order. "Written" is what they said about shops, which
+ * is the context that makes a run of one-star reviews legible: a customer who
+ * rates every shop one star is a different problem from one who had a bad week.
+ */
+export function RatingsSection({ data }: { data: UserProfile }) {
+  const received = data.ratingsReceived || [];
+  const written = data.ratingsWritten || [];
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <RatingSummaryCard
+          summary={data.ratingSummary}
+          title="Customer rating"
+          emptyHint="No shop has rated them yet."
+        />
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="From shops"
+          subtitle={`${count(received.length)} rating${received.length === 1 ? "" : "s"} about this customer`}
+        />
+        {received.length === 0 ? (
+          <EmptyState
+            icon={LuStar}
+            title="No ratings from shops"
+            hint="A shop can rate a customer once their order completes."
+          />
+        ) : (
+          <div>
+            {received.map((r) => (
+              <RatingCard key={r.id} rating={r} subject="vendor" />
+            ))}
+          </div>
+        )}
+      </Card>
+
+      <Card>
+        <CardHeader
+          title="About shops"
+          subtitle={`${count(written.length)} rating${written.length === 1 ? "" : "s"} this customer wrote`}
+        />
+        {written.length === 0 ? (
+          <EmptyState
+            icon={LuStar}
+            title="They haven't rated anyone"
+            hint="Ratings this customer leaves for shops appear here."
+          />
+        ) : (
+          <div>
+            {written.map((r) => (
+              <RatingCard key={r.id} rating={r} subject="vendor" />
+            ))}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

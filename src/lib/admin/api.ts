@@ -11,6 +11,7 @@ const API_BASE =
     ? LOCAL_API
     : PROD_API);
 import { saveSession, readSession, clearSession } from "@/lib/session";
+import type { RatingRow, RatingSummary } from "@/components/console/ratings";
 
 export const getToken = (): string => readSession("admin");
 
@@ -339,6 +340,12 @@ export interface UserProfile {
   tickets: UserTicket[];
   savedPrinters: UserPrinter[];
   activity: ActivityEvent[];
+  /** How shops rate this customer. */
+  ratingSummary: RatingSummary;
+  /** What shops wrote about them, and what they wrote about shops — both sides,
+   *  because a bad review a user left is often the context for the one they got. */
+  ratingsReceived: RatingRow[];
+  ratingsWritten: RatingRow[];
 }
 
 // ── Vendor profile bundle (GET /admin/vendors/:id) ───────────────────────────
@@ -421,6 +428,9 @@ export interface VendorProfile {
   };
   orders: VendorOrder[];
   activity: { at: string; kind: "ORDER" | "PRINTER" | "JOINED"; title: string; detail: string }[];
+  /** Includes hidden ratings — staff see what was moderated, not just what shows. */
+  ratingSummary: RatingSummary;
+  ratings: RatingRow[];
 }
 
 export interface VendorListRow {

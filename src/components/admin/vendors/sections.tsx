@@ -19,6 +19,7 @@ import { inr, count, dateOnly, dateTime } from "@/lib/console/format";
 import {
   Card, Table, Td, Tr, StatusChip, LevelBar, EmptyState, StatTile, Chip,
 } from "@/components/console/primitives";
+import { RatingCard, RatingSummaryCard } from "@/components/console/ratings";
 
 // ── Not-built-yet notice ─────────────────────────────────────────────────────
 
@@ -194,6 +195,46 @@ export function VendorOrdersSection({ data }: { data: VendorProfile }) {
         ))}
       </Table>
     </Card>
+  );
+}
+
+// ── Reviews ──────────────────────────────────────────────────────────────────
+
+/**
+ * What customers said about this shop. Staff see hidden ratings here too — the
+ * point of an operator's view of a vendor is to know what was said, including
+ * the parts that were taken down. Moderating them happens on the Ratings page,
+ * not here; this is the read.
+ */
+export function VendorReviewsSection({ data }: { data: VendorProfile }) {
+  const ratings = data.ratings || [];
+
+  return (
+    <div className="space-y-3">
+      <Card>
+        <RatingSummaryCard
+          summary={data.ratingSummary}
+          title="Shop rating"
+          emptyHint="No ratings yet."
+        />
+      </Card>
+
+      <Card>
+        {ratings.length === 0 ? (
+          <EmptyState
+            icon={LuStar}
+            title="No reviews yet"
+            hint="Customers can rate a shop once their print completes."
+          />
+        ) : (
+          <div>
+            {ratings.map((r) => (
+              <RatingCard key={r.id} rating={r} subject="user" />
+            ))}
+          </div>
+        )}
+      </Card>
+    </div>
   );
 }
 

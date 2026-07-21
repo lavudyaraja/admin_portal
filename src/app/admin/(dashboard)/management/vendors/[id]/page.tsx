@@ -15,7 +15,7 @@ import { apiFetch, type VendorProfile } from "@/lib/admin/api";
 import { Card, Skeleton, ErrorState, PageHeader, Chip } from "@/components/console/primitives";
 import {
   VendorProfileSection, ShopDetailsSection, VendorPrintersSection, VendorOrdersSection,
-  VendorRevenueSection, VendorBankSection, VendorActivitySection, NotBuilt,
+  VendorRevenueSection, VendorBankSection, VendorActivitySection, VendorReviewsSection, NotBuilt,
 } from "@/components/admin/vendors/sections";
 
 const TABS: { id: string; label: string; icon: IconType }[] = [
@@ -151,13 +151,7 @@ function VendorProfilePageBody() {
               needs="Nothing collects or stores identity documents. The bank account has a verified flag, but no document is attached to it — this needs a KYC upload and review flow."
             />
           )}
-          {tab === "reviews" && (
-            <NotBuilt
-              icon={LuStar}
-              title="Reviews don't exist yet"
-              needs="Users can report a problem, but they can't rate a shop or a printer. This needs a rating on completed orders before there is anything to show."
-            />
-          )}
+          {tab === "reviews" && <VendorReviewsSection data={data} />}
         </>
       )}
     </>
