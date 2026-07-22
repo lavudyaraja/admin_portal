@@ -50,7 +50,7 @@ export default function LoginPage() {
         method: "POST",
         body: { email: email.trim().toLowerCase(), password },
       });
-      if (!isConsoleRole(data.user.role)) throw new Error("Access denied. Admin account required.");
+      if (!isConsoleRole(data.user.role)) throw new Error("This login is for shop (vendor) accounts. Please use a vendor account.");
       setToken(data.token, remember);
       router.replace("/vendor/dashboard");
     } catch (err) {

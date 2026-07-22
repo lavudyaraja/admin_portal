@@ -7,7 +7,8 @@
 // surface that makes a new-complaint alert actually reach the shop — the row is
 // written when a customer files an issue against one of their printers.
 import { useCallback, useEffect, useRef, useState } from "react";
-import { LuBell } from "react-icons/lu";
+import { useRouter } from "next/navigation";
+import { LuBell, LuChevronRight } from "react-icons/lu";
 import { apiFetch } from "@/lib/vendor/api";
 
 interface Notification {
@@ -16,6 +17,7 @@ interface Notification {
   body: string;
   read: boolean;
   orderId: string | null;
+  link: string | null;
   createdAt: string;
 }
 
@@ -34,6 +36,7 @@ function timeAgo(iso: string): string {
 }
 
 export default function NotificationBell() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [items, setItems] = useState<Notification[]>([]);
@@ -88,6 +91,11 @@ export default function NotificationBell() {
     }
   }
 
+  function openNotification(n: Notification) {
+    setOpen(false);
+    if (n.link) router.push(n.link);
+  }
+
   return (
     <div className="relative" ref={ref}>
       <button
@@ -116,18 +124,29 @@ export default function NotificationBell() {
               <p className="px-4 py-8 text-center text-sm text-slate-400">You&apos;re all caught up.</p>
             ) : (
               <ul className="divide-y divide-slate-50">
-                {items.map((n) => (
-                  <li key={n.id} className={`px-4 py-3 ${n.read ? "" : "bg-rose-50/40"}`}>
-                    <div className="flex items-start gap-2.5">
-                      {!n.read && <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[13px] font-semibold text-slate-800">{n.title}</p>
-                        <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{n.body}</p>
-                        <p className="text-[10px] text-slate-400 mt-1">{timeAgo(n.createdAt)}</p>
-                      </div>
-                    </div>
-                  </li>
-                ))}
+                {items.map((n) => {
+                  const clickable = !!n.link;
+                  return (
+                    <li key={n.id}>
+                      <button
+                        type="button"
+                        onClick={() => openNotification(n)}
+                        disabled={!clickable}
+                        className={`w-full text-left px-4 py-3 flex items-start gap-2.5 transition-colors ${
+                          n.read ? "" : "bg-rose-50/40"
+                        } ${clickable ? "hover:bg-slate-50 cursor-pointer" : "cursor-default"}`}
+                      >
+                        {!n.read && <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0" />}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[13px] font-semibold text-slate-800">{n.title}</p>
+                          <p className="text-xs text-slate-500 leading-relaxed mt-0.5">{n.body}</p>
+                          <p className="text-[10px] text-slate-400 mt-1">{timeAgo(n.createdAt)}</p>
+                        </div>
+                        {clickable && <LuChevronRight size={15} className="text-slate-300 shrink-0 mt-0.5" />}
+                      </button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

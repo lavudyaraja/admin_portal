@@ -65,7 +65,7 @@ export default function ForgotPasswordPage() {
         "/auth/reset-password",
         { method: "POST", body: { phone: phone.replace(/\D/g, ""), code: code.trim(), password } }
       );
-      if (!isConsoleRole(data.user.role)) throw new Error("Access denied. Admin account required.");
+      if (!isConsoleRole(data.user.role)) throw new Error("This login is for shop (vendor) accounts. Please use a vendor account.");
       setToken(data.token);
       router.replace("/vendor/dashboard");
     } catch (err) {

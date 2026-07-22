@@ -64,7 +64,10 @@ export interface AdminUser {
   name: string;
   phone: string;
   email: string | null;
-  role: "STUDENT" | "OPERATOR" | "ADMIN";
+  role: "STUDENT" | "VENDOR" | "OPERATOR" | "ADMIN";
 }
 
-export const isConsoleRole = (role?: string) => role === "ADMIN" || role === "OPERATOR";
+// VENDOR is the current shop-owner role; OPERATOR is its pre-rename name and
+// still appears on older accounts. Both — plus ADMIN — may use the console.
+export const isConsoleRole = (role?: string) =>
+  role === "ADMIN" || role === "VENDOR" || role === "OPERATOR";
